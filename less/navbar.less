@@ -14,8 +14,9 @@
 }
 
 .app-navbar {
-	border-top: 20px solid @app-gray;
+	border-top: 0px solid @app-gray;
 	border-bottom: 0;
+	background: #000;
 }
 
 @media(min-width:767px) {
@@ -27,7 +28,7 @@
 		transition: background .5s ease-in-out,padding .5s ease-in-out;
 	}
 	.app-navbar-collapse {
-		padding: 20px 0;
+		padding: 20px 0 10px 0;
 	}
 }
 
@@ -41,5 +42,5 @@
 }
 
 .navbar-nav > li > a:focus {
-    border-bottom: 10px solid @app-gray;
+    color: @app-danger !important;
 }
