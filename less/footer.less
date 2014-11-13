@@ -5,8 +5,43 @@
 .app-footer {
     padding: @line-height-computed;
     border-top: 1px solid @gray-lighter;
+    background: @app-danger;
+    color: white;
 }
 
 .app-footer-content {
   .container();
+  text-align: center;
+  text-transform: uppercase;
+
+  a {
+  	color: #fff;
+  }
+
+  .app-social{
+    
+    ul {
+        list-style-type: none;
+        padding: 0;
+
+        li {
+            display: inline-block;
+            margin-left: 3px;
+            margin-right: 3px;
+                a {
+                    border: 1px solid #fff;
+                    border-radius: 50%;
+                    display: inline-block;
+                    height: 36px;
+                    width: 36px;
+                    transition: all 0.2s ease-in-out 0s;
+
+                    i {
+                        font-size: 17px;
+                        line-height: 36px;
+                    }
+                }
+        }
+    }
+}
 }

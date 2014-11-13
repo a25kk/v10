@@ -13357,470 +13357,1301 @@ if (typeof jQuery === 'undefined') {
 
 }, this));
 
-(function (factory) {
-	window.lazySizes = factory();
+/*!
+  hey, [be]Lazy.js - v1.2.2 - 2014.05.04 
+  A lazy loading and multi-serving image script
+  (c) Bjoern Klinggaard - @bklinggaard - http://dinbror.dk/blazy
+*/
+;(function(bLazyJS) {
 	if (typeof define === 'function' && define.amd) {
-		define(function() {
-			return window.lazySizes;
-		});
-	}
-}(function () {
-	'use strict';
-
-	if(!Date.now || !window.document.getElementsByClassName || !Object.freeze){return;}
-
-	var lazyloadElems, autosizesElems, lazySizesConfig, globalSizesTimer,
-		globalSizesIndex, globalLazyTimer, globalLazyIndex, globalInitialTimer,
-		addClass, removeClass, hasClass, isWinloaded;
-	var document = window.document;
-	var isPreloading = 0;
-
-	var regPicture = /^picture$/i;
-	var regImg = /^img$/i;
-	var inViewTreshhold = 10;
-
-	var setImmediate = window.setImmediate || window.setTimeout;
-	var addRemoveImgEvents = function(dom, fn, add){
-		var action = add ? 'addEventListener' : 'removeEventListener';
-		dom[action]('load', fn, false);
-		dom[action]('error', fn, false);
-	};
-
-	var triggerEvent = function(elem, name, details){
-		var event = document.createEvent('Event');
-
-		event.initEvent(name, true, true);
-
-		event.details = details || {};
-
-		elem.dispatchEvent(event);
-		return event;
-	};
-
-	if(document.documentElement.classList){
-		addClass = function(el, cls){
-			el.classList.add(cls);
-		};
-		removeClass = function(el, cls){
-			el.classList.remove(cls);
-		};
-		hasClass = function(el, cls){
-			return el.classList.contains(cls);
-		};
+        	// Register bLazy as an AMD module
+        	define(bLazyJS);
 	} else {
-		addClass = function(ele, cls) {
-			if (!hasClass(ele, cls)){
-				ele.className += " "+cls;
-			}
-		};
-		removeClass = function(ele, cls) {
-			var reg;
-			if (hasClass(ele,cls)) {
-				reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
-				ele.className = ele.className.replace(reg,' ');
-			}
-		};
-		hasClass = function hasClass(ele,cls) {
-			return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
-		};
+        	// Register bLazy on window
+        	window.Blazy = bLazyJS();
 	}
-
-	function updatePolyfill(el, full){
-		var imageData;
-		if(window.picturefill){
-			picturefill({reevaluate: true, reparse: true, elements: [el]});
-		} else if(window.respimage && !respimage._.observer){
-			if(full){
-				imageData = el[respimage._.ns];
-				if(imageData){
-					imageData[full.srcset ? 'srcset' : 'src'] = undefined;
+})(function () {
+	'use strict';
+	
+	//vars
+	var source, options, winWidth, winHeight, images, count, isRetina, destroyed;
+	//throttle vars
+	var validateT, saveWinOffsetT;
+	
+	// constructor
+	function Blazy(settings) {
+		//IE7- fallback for missing querySelectorAll support
+		if (!document.querySelectorAll) {
+			var s=document.createStyleSheet();
+			document.querySelectorAll = function(r, c, i, j, a) {
+				a=document.all, c=[], r = r.replace(/\[for\b/gi, '[htmlFor').split(',');
+				for (i=r.length; i--;) {
+					s.addRule(r[i], 'k:v');
+					for (j=a.length; j--;) a[j].currentStyle.k && c.push(a[j]);
+						s.removeRule(0);
 				}
-			}
-			respimage({reparse: true, elements: [el]});
-		} else if(!window.HTMLPictureElement && window.console && document.readyState == 'complete'){
-			console.log('use a respimg polyfill: http://bit.ly/1FCts3P');
+				return c;
+			};
 		}
-	}
+		//init vars
+		destroyed 		= true;
+		images 			= [];
+		//options
+		options 		= settings 		|| {};
+		options.error	 	= options.error 	|| false;
+		options.offset		= options.offset 	|| 100;
+		options.success		= options.success 	|| false;
+	  	options.selector 	= options.selector 	|| '.b-lazy';
+		options.separator 	= options.separator 	|| '|';
+		options.container	= options.container 	?  document.querySelectorAll(options.container) : false;
+		options.errorClass 	= options.errorClass 	|| 'b-error';
+		options.breakpoints	= options.breakpoints	|| false;
+		options.successClass 	= options.successClass 	|| 'b-loaded';
+		options.src = source 	= options.src		|| 'data-src';
+		isRetina		= window.devicePixelRatio > 1;
+		//throttle, ensures that we don't call the functions too often
+		validateT		= throttle(validate, 25); 
+		saveWinOffsetT		= throttle(saveWinOffset, 50);
 
-	var eLlen, resetPreloadingTimer, eLvW, elvH, eLtop, eLleft, eLright, eLbottom, eLnegativeTreshhold;
-	var eLnow = Date.now();
-	var resetPreloading = function(e){
-		isPreloading--;
-		clearTimeout(resetPreloadingTimer);
-		if(e && e.target){
-			addRemoveImgEvents(e.target, resetPreloading);
-		}
-		if(!e || isPreloading < 0 || !e.target) {
-			isPreloading = 0;
-		}
-	};
-	var lazyEvalLazy = (function(){
-		var timer, running;
-		var unblock = function(){
-			running = false;
-		};
-		var run = function(){
-			clearTimeout(timer);
-			clearLazyTimer();
-			evalLazyElements();
-			setTimeout(unblock);
-		};
-		return {
-			debounce: function(){
-				clearTimeout(timer);
-				clearTimeout(globalInitialTimer);
-				running = true;
-				timer = setTimeout(run, 66);
-			},
-			throttled: function(){
-				var delay;
-				if(!running){
-					running = true;
-					clearTimeout(timer);
-					delay = Date.now() - eLnow;
-					if(delay > 300){
-						delay = 9;
-					} else {
-						delay = 99;
-					}
-					timer = setTimeout(run, delay);
-				}
-			}
-		};
-	})();
-
-	var evalLazyElements = function (){
-		var rect, autoLoadElem, loadedSomething;
-		eLlen = lazyloadElems.length;
-		eLnow = Date.now();
-		if(eLlen){
-			eLvW = window.innerWidth + inViewTreshhold;
-			elvH = window.innerHeight + inViewTreshhold;
-			eLnegativeTreshhold = inViewTreshhold * -1;
-
-			for(; globalLazyIndex < eLlen; globalLazyIndex++){
-				rect = lazyloadElems[globalLazyIndex].getBoundingClientRect();
-
-				if ((eLbottom = rect.bottom) >= eLnegativeTreshhold &&
-					(eLtop = rect.top) <= elvH &&
-					(eLright = rect.right) >= eLnegativeTreshhold &&
-					(eLleft = rect.left) <= eLvW &&
-					(eLbottom || eLright || eLleft || eLtop)){
-					unveilLazy(lazyloadElems[globalLazyIndex]);
-					loadedSomething = true;
-				} else  {
-					if(globalLazyIndex < eLlen - 1 && Date.now() - eLnow > 9){
-						globalLazyIndex++;
-						autoLoadElem = false;
-						globalLazyTimer = setTimeout(evalLazyElements, 4);
-						break;
-					}
-
-					if(!loadedSomething && isWinloaded && !autoLoadElem &&
-						lazySizesConfig.preloadAfterLoad && isPreloading < 2 &&
-						((eLbottom || eLright || eLleft || eLtop) || lazyloadElems[globalLazyIndex].getAttribute(lazySizesConfig.sizesAttr) != 'auto')){
-						autoLoadElem = lazyloadElems[globalLazyIndex];
-					}
-				}
-			}
-
-			if(autoLoadElem && !loadedSomething){
-				preload(autoLoadElem);
-			}
-		}
-	};
-
-	function preload(elem){
-		isPreloading++;
-		elem = unveilLazy(elem);
-		addRemoveImgEvents(elem, resetPreloading);
-		addRemoveImgEvents(elem, resetPreloading, true);
-		clearTimeout(resetPreloadingTimer);
-		resetPreloadingTimer = setTimeout(resetPreloading, 5000);
-	}
-
-	function clearLazyTimer(){
-		globalLazyIndex = 0;
-		clearTimeout(globalLazyTimer);
-	}
-
-	function unveilLazy(elem, force){
-		var sources, i, len, sourceSrcset, sizes, src, srcset, parent, isPicture;
-
-		var event = triggerEvent(elem, 'lazybeforeunveil', {force: !!force});
-
-		if(!event.defaultPrevented){
-			//allow using sizes="auto", but don't use. it's invalid. Use data-sizes="auto" or a valid value for sizes instead (i.e.: sizes="80vw")
-			sizes = elem.getAttribute(lazySizesConfig.sizesAttr) || elem.getAttribute('sizes');
-
-			if(sizes){
-				if(sizes == 'auto'){
-					updateSizes(elem, true);
-				} else {
-					elem.setAttribute('sizes', sizes);
-				}
-				if(lazySizesConfig.clearAttr){
-					elem.removeAttribute(lazySizesConfig.sizesAttr);
-				}
-			}
-
-			srcset = elem.getAttribute(lazySizesConfig.srcsetAttr);
-			src = elem.getAttribute(lazySizesConfig.srcAttr);
-
-			if(regImg.test(elem.nodeName || '')) {
-				parent = elem.parentNode;
-				isPicture = regPicture.test(parent.nodeName || '');
-			}
-
-			if(srcset || src){
-
-				if(isPicture){
-					sources = parent.getElementsByTagName('source');
-					for(i = 0, len = sources.length; i < len; i++){
-						sourceSrcset = sources[i].getAttribute(lazySizesConfig.srcsetAttr);
-						if(sourceSrcset){
-							sources[i].setAttribute('srcset', sourceSrcset);
-						}
-					}
-				}
-
-				if(srcset){
-					elem.setAttribute('srcset', srcset);
-					if(lazySizesConfig.clearAttr){
-						elem.removeAttribute(lazySizesConfig.srcsetAttr);
-					}
-				} else if(src){
-					elem.setAttribute('src', src);
-					if(lazySizesConfig.clearAttr) {
-						elem.removeAttribute(lazySizesConfig.srcAttr);
-					}
-				}
-
-
-			}
-		}
-
-		setImmediate(function(){
-			removeClass(elem, lazySizesConfig.lazyClass);
-			if(sizes == 'auto'){
-				addClass(elem, lazySizesConfig.autosizesClass);
-			}
-
-			if(srcset || sizes){
-				updatePolyfill(elem, {srcset: srcset, src: src});
+		saveWinOffset();		
+		//handle multi-served image src
+		each(options.breakpoints, function(object){
+			if(object.width >= window.screen.width) {
+				source = object.src;
+				return false;
 			}
 		});
-		return elem;
-	}
-
-	var lazyEvalSizes = (function(){
-		var timer;
-		var run = function(){
-			clearTimeout(timer);
-			clearSizesTimer();
-			evalSizesElements();
-		};
-		return function(){
-			clearTimeout(timer);
-			clearTimeout(globalSizesTimer);
-			timer = setTimeout(run, 99);
-		};
-	})();
-
-	var evalSizesElements = function(){
-		var checkTime, now, i;
-		var len = autosizesElems.length;
-		if(len){
-
-			now = Date.now();
-			i = globalSizesIndex || 0;
-			checkTime = i + 3;
-
-			clearSizesTimer();
-
-			for(; i < len; i++){
-				updateSizes(autosizesElems[i]);
-
-				if(i > checkTime && i < len - 1 && Date.now() - now > 9){
-					globalSizesIndex = i + 1;
-
-					globalSizesTimer = setTimeout(evalSizesElements, 4);
-					break;
-				}
-			}
-		}
+		
+		// start lazy load
+		initialize();	
+  	}
+	
+	/* public functions
+	************************************/
+	Blazy.prototype.revalidate = function() {
+ 		initialize();
+   	};
+	Blazy.prototype.load = function(element){
+		if(!isElementLoaded(element)) loadImage(element);
 	};
-
-	function clearSizesTimer(){
-		globalSizesIndex = 0;
-		clearTimeout(globalSizesTimer);
+	Blazy.prototype.destroy = function(){
+		if(options.container){
+			each(options.container, function(object){
+				unbindEvent(object, 'scroll', validateT);
+			});
+		}
+		unbindEvent(window, 'scroll', validateT);
+		unbindEvent(window, 'resize', validateT);
+		unbindEvent(window, 'resize', saveWinOffsetT);
+		count = 0;
+		images.length = 0;
+		destroyed = true;
+	};
+	
+	/* private helper functions
+	************************************/
+	function initialize(){
+		// First we create an array of images to lazy load
+		createImageArray(options.selector);
+		// Then we bind resize and scroll events if not already binded
+		if(destroyed) {
+			destroyed = false;
+			if(options.container) {
+	 			each(options.container, function(object){
+	 				bindEvent(object, 'scroll', validateT);
+	 			});
+	 		}
+			bindEvent(window, 'resize', saveWinOffsetT);
+			bindEvent(window, 'resize', validateT);
+	 		bindEvent(window, 'scroll', validateT);
+		}
+		// And finally, we start to lazy load. Should bLazy ensure domready?
+		validate();	
 	}
-
-	function updateSizes(elem, dataAttr){
-		var parentWidth, elemWidth, width, parent, sources, i, len, event;
-		parent = elem.parentNode;
-
-		if(parent){
-			parentWidth = parent.offsetWidth;
-			elemWidth = elem.offsetWidth;
-			width = (elemWidth > parentWidth) ?
-				elemWidth :
-				parentWidth;
-
-			if(!width && !elem._lazysizesWidth){
-				while(parent && parent != document.body && !width){
-					width =  parent.offsetWidth;
-					parent = parent.parentNode;
-				}
-			}
-
-			event = triggerEvent(elem, 'lazybeforesizes', {width: width, dataAttr: !!dataAttr});
-
-			if(!event.defaultPrevented){
-				width = event.details.width;
-
-				if(width && width !== elem._lazysizesWidth && (!lazySizesConfig.onlyLargerSizes || (!elem._lazysizesWidth || elem._lazysizesWidth < width))){
-					elem._lazysizesWidth = width;
-					width += 'px';
-					elem.setAttribute('sizes', width);
-
-					if(regPicture.test(parent.nodeName || '')){
-						sources = parent.getElementsByTagName('source');
-						for(i = 0, len = sources.length; i < len; i++){
-							sources[i].setAttribute('sizes', width);
-						}
-					}
-
-					if(!event.details.dataAttr){
-						updatePolyfill(elem);
-					}
-				}
-			}
+	
+	function validate() {
+		for(var i = 0; i<count; i++){
+			var image = images[i];
+ 			if(elementInView(image) || isElementLoaded(image)) {
+				Blazy.prototype.load(image);
+ 				images.splice(i, 1);
+ 				count--;
+ 				i--;
+ 			} 
+ 		}
+		if(count === 0) {
+			Blazy.prototype.destroy();
 		}
 	}
-
-	// bind to all possible events ;-) This might look like a performance disaster, but it isn't.
-	// The main check functions are written to run extreme fast without consuming memory.
-	var onload = function(){
-		inViewTreshhold = 400;
-		clearTimeout(globalInitialTimer);
-
-		document.addEventListener('load', lazyEvalLazy.throttled, true);
-		isWinloaded = true;
-	};
-	var onready = function(){
-		var docElem = document.documentElement;
-
-		if(lazySizesConfig.mutation){
-			if(window.MutationObserver){
-				new MutationObserver( lazyEvalLazy.throttled ).observe( docElem, {childList: true, subtree: true, attributes: true} );
+	
+	function loadImage(ele){
+		// if element is visible
+		if(ele.offsetWidth > 0 && ele.offsetHeight > 0) {
+			var dataSrc = ele.getAttribute(source) || ele.getAttribute(options.src); // fallback to default data-src
+			if(dataSrc) {
+				var dataSrcSplitted = dataSrc.split(options.separator);
+				var src = dataSrcSplitted[isRetina && dataSrcSplitted.length > 1 ? 1 : 0];
+				var img = new Image();
+				// cleanup markup, remove data source attributes
+				each(options.breakpoints, function(object){
+					ele.removeAttribute(object.src);
+				});
+				ele.removeAttribute(options.src);
+				img.onerror = function() {
+					if(options.error) options.error(ele, "invalid");
+					ele.className = ele.className + ' ' + options.errorClass;
+				}; 
+				img.onload = function() {
+					// Is element an image or should we add the src as a background image?
+			      		ele.nodeName.toLowerCase() === 'img' ? ele.src = src : ele.style.backgroundImage = 'url("' + src + '")';	
+					ele.className = ele.className + ' ' + options.successClass;	
+					if(options.success) options.success(ele);
+				};
+				img.src = src; //preload image
 			} else {
-				docElem.addEventListener( "DOMNodeInserted", lazyEvalLazy.throttled, true);
-				docElem.addEventListener( "DOMAttrModified", lazyEvalLazy.throttled, true);
+				if(options.error) options.error(ele, "missing");
+				ele.className = ele.className + ' ' + options.errorClass;
 			}
 		}
+	 }
+			
+	function elementInView(ele) {
+		var rect = ele.getBoundingClientRect();
+		var bottomline = winHeight + options.offset;
+		
+	    return (
+		 // inside horizontal view
+		 rect.left >= 0
+		 && rect.right <= winWidth + options.offset	 
+		 && (
+		 // from top to bottom
+		 rect.top  >= 0
+		 && rect.top  <= bottomline
+		 // from bottom to top
+		 || rect.bottom <= bottomline
+	 	 	&& rect.bottom >= 0 - options.offset
+			)
+		);
+	 }
+	 
+	 function isElementLoaded(ele) {
+		 return (' ' + ele.className + ' ').indexOf(' ' + options.successClass + ' ') !== -1;
+	 }
+	 
+	 function createImageArray(selector) {
+ 		var nodelist 	= document.querySelectorAll(selector);
+ 		count 			= nodelist.length;
+ 		//converting nodelist to array
+ 		for(var i = count; i--; images.unshift(nodelist[i])){}
+	 }
+	 
+	 function saveWinOffset(){
+		 winHeight = window.innerHeight || document.documentElement.clientHeight;
+		 winWidth = window.innerWidth || document.documentElement.clientWidth;
+	 }
+	 
+	 function bindEvent(ele, type, fn) {
+		 if (ele.attachEvent) {
+         		ele.attachEvent && ele.attachEvent('on' + type, fn);
+       	 	} else {
+         	       ele.addEventListener(type, fn, false);
+       		}
+	 }
+	 
+	 function unbindEvent(ele, type, fn) {
+		 if (ele.detachEvent) {
+         		ele.detachEvent && ele.detachEvent('on' + type, fn);
+       	 	} else {
+         	       ele.removeEventListener(type, fn, false);
+       		}
+	 }
+	 
+	 function each(object, fn){
+ 		if(object && fn) {
+ 			var l = object.length;
+ 			for(var i = 0; i<l && fn(object[i], i) !== false; i++){}
+ 		}
+	 }
+	 
+	 function throttle(fn, minDelay) {
+     		 var lastCall = 0;
+		 return function() {
+			 var now = +new Date();
+         		 if (now - lastCall < minDelay) {
+           			 return;
+			 }
+         		 lastCall = now;
+         		 fn.apply(images, arguments);
+       		 };
+	 }
+  	
+	 return Blazy;
+});
 
-		//:hover
-		if(lazySizesConfig.hover){
-			document.addEventListener('mouseover', lazyEvalLazy.throttled, true);
-		}
-		//:focus/active
-		document.addEventListener('focus', lazyEvalLazy.throttled, true);
-		//:target
-		window.addEventListener('hashchange', lazyEvalLazy.throttled, true);
+$(function() {
 
-		//:fullscreen
-		if(('onmozfullscreenchange' in docElem)){
-			window.addEventListener('mozfullscreenchange', lazyEvalLazy.throttled, true);
-		} else if(('onwebkitfullscreenchange' in docElem)){
-			window.addEventListener('webkitfullscreenchange', lazyEvalLazy.throttled, true);
-		} else {
-			window.addEventListener('fullscreenchange', lazyEvalLazy.throttled, true);
-		}
+    $("input,textarea").jqBootstrapValidation({
+        preventSubmit: true,
+        submitError: function($form, event, errors) {
+            // additional error messages or events
+        },
+        submitSuccess: function($form, event) {
+            event.preventDefault(); // prevent default submit behaviour
+            // get values from FORM
+            var name = $("input#name").val();
+            var email = $("input#email").val();
+            var subject = $("input#subject").val();
+            var message = $("textarea#message").val();
+            var firstName = name; // For Success/Failure Message
+            // Check for white space in name for Success/Fail message
+            if (firstName.indexOf(' ') >= 0) {
+                firstName = name.split(' ').slice(0, -1).join(' ');
+            }
+            $.ajax({
+                url: "https://mandrillapp.com/api/1.0/messages/send.json",
+                type: "POST",
+                data: {
+                    'key': 'rHa81iI_RE75JOLOTvbiNg',
+                    'message': {
+                      'from_email': email,
+                      'to': [
+                          {
+                            'email': 'info@nugzblacky.com',
+                            'name': 'Test',
+                            'type': 'to'
+                          }
+                        ],
+                      'autotext': 'true',
+                      'subject': 'Anfrage von ' + name + ': ' + subject,
+                      'html': message
+                    }
+                },
+                cache: false,
+                success: function() {
+                    // Success message
+                    $('#success').html("<div class='alert alert-success'>");
+                    $('#success > .alert-success').html("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;")
+                        .append("</button>");
+                    $('#success > .alert-success')
+                        .append("<strong>Your message has been sent. </strong>");
+                    $('#success > .alert-success')
+                        .append('</div>');
 
-		if(lazySizesConfig.cssanimation){
-			document.addEventListener('animationstart', lazyEvalLazy.throttled, true);
-			document.addEventListener('transitionstart', lazyEvalLazy.throttled, true);
-		}
-	};
+                    //clear all fields
+                    $('#contactForm').trigger("reset");
+                },
+                error: function() {
+                    // Fail message
+                    $('#success').html("<div class='alert alert-danger'>");
+                    $('#success > .alert-danger').html("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;")
+                        .append("</button>");
+                    $('#success > .alert-danger').append("<strong>Sorry " + firstName + ", it seems that my mail server is not responding. Please try again later!");
+                    $('#success > .alert-danger').append('</div>');
+                    //clear all fields
+                    $('#contactForm').trigger("reset");
+                },
+            })
+        },
+        filter: function() {
+            return $(this).is(":visible");
+        },
+    });
 
-	lazySizesConfig = window.lazySizesConfig || {};
-
-	(function(){
-		var prop;
-		var lazySizesDefaults = {
-			mutation: true,
-			hover: true,
-			cssanimation: true,
-			lazyClass: 'lazyload',
-			scroll: true,
-			autosizesClass: 'lazyautosizes',
-			srcAttr: 'data-src',
-			srcsetAttr: 'data-srcset',
-			sizesAttr: 'data-sizes',
-			preloadAfterLoad: false,
-			onlyLargerSizes: true
-		};
-
-		for(prop in lazySizesDefaults){
-			if(!(prop in lazySizesConfig)){
-				lazySizesConfig[prop] = lazySizesDefaults[prop];
-			}
-		}
-	})();
-
-	setTimeout(function(){
+    $("a[data-toggle=\"tab\"]").click(function(e) {
+        e.preventDefault();
+        $(this).tab("show");
+    });
+});
 
 
-		lazyloadElems = document.getElementsByClassName(lazySizesConfig.lazyClass);
-		autosizesElems = document.getElementsByClassName(lazySizesConfig.autosizesClass);
+/*When clicking on Full hide fail/success boxes */
+$('#name').focus(function() {
+    $('#success').html('');
+});
 
-		if(lazySizesConfig.scroll) {
-			addEventListener('scroll', lazyEvalLazy.throttled, true);
-		}
+/* jqBootstrapValidation
+ * A plugin for automating validation on Twitter Bootstrap formatted forms.
+ *
+ * v1.3.6
+ *
+ * License: MIT <http://opensource.org/licenses/mit-license.php> - see LICENSE file
+ *
+ * http://ReactiveRaven.github.com/jqBootstrapValidation/
+ */
 
-		addEventListener('resize', lazyEvalLazy.debounce, false);
-		addEventListener('resize', lazyEvalSizes, false);
+(function( $ ){
 
-		if(/^i|^loade|c/.test(document.readyState)){
-			onready();
-		} else {
-			document.addEventListener('DOMContentLoaded', onready, false);
-		}
+	var createdElements = [];
 
-		if(document.readyState == 'complete'){
-			onload();
-		} else {
-			addEventListener('load', onload, false);
-			document.addEventListener('readystatechange', lazyEvalLazy.throttled, false);
-		}
+	var defaults = {
+		options: {
+			prependExistingHelpBlock: false,
+			sniffHtml: true, // sniff for 'required', 'maxlength', etc
+			preventSubmit: true, // stop the form submit event from firing if validation fails
+			submitError: false, // function called if there is an error when trying to submit
+			submitSuccess: false, // function called just before a successful submit event is sent to the server
+            semanticallyStrict: false, // set to true to tidy up generated HTML output
+			autoAdd: {
+				helpBlocks: true
+			},
+            filter: function () {
+                // return $(this).is(":visible"); // only validate elements you can see
+                return true; // validate everything
+            }
+		},
+    methods: {
+      init : function( options ) {
 
-		lazyEvalLazy.throttled();
+        var settings = $.extend(true, {}, defaults);
 
-	});
+        settings.options = $.extend(true, settings.options, options);
 
-	return {
-		cfg: lazySizesConfig,
-		updateAllSizes: lazyEvalSizes,
-		updateAllLazy: lazyEvalLazy.throttled,
-		unveilLazy: function(el){
-			if(hasClass(el, lazySizesConfig.lazyClass)){
-				unveilLazy(el);
+        var $siblingElements = this;
+
+        var uniqueForms = $.unique(
+          $siblingElements.map( function () {
+            return $(this).parents("form")[0];
+          }).toArray()
+        );
+
+        $(uniqueForms).bind("submit", function (e) {
+          var $form = $(this);
+          var warningsFound = 0;
+          var $inputs = $form.find("input,textarea,select").not("[type=submit],[type=image]").filter(settings.options.filter);
+          $inputs.trigger("submit.validation").trigger("validationLostFocus.validation");
+
+          $inputs.each(function (i, el) {
+            var $this = $(el),
+              $controlGroup = $this.parents(".form-group").first();
+            if (
+              $controlGroup.hasClass("warning")
+            ) {
+              $controlGroup.removeClass("warning").addClass("error");
+              warningsFound++;
+            }
+          });
+
+          $inputs.trigger("validationLostFocus.validation");
+
+          if (warningsFound) {
+            if (settings.options.preventSubmit) {
+              e.preventDefault();
+            }
+            $form.addClass("error");
+            if ($.isFunction(settings.options.submitError)) {
+              settings.options.submitError($form, e, $inputs.jqBootstrapValidation("collectErrors", true));
+            }
+          } else {
+            $form.removeClass("error");
+            if ($.isFunction(settings.options.submitSuccess)) {
+              settings.options.submitSuccess($form, e);
+            }
+          }
+        });
+
+        return this.each(function(){
+
+          // Get references to everything we're interested in
+          var $this = $(this),
+            $controlGroup = $this.parents(".form-group").first(),
+            $helpBlock = $controlGroup.find(".help-block").first(),
+            $form = $this.parents("form").first(),
+            validatorNames = [];
+
+          // create message container if not exists
+          if (!$helpBlock.length && settings.options.autoAdd && settings.options.autoAdd.helpBlocks) {
+              $helpBlock = $('<div class="help-block" />');
+              $controlGroup.find('.controls').append($helpBlock);
+							createdElements.push($helpBlock[0]);
+          }
+
+          // =============================================================
+          //                                     SNIFF HTML FOR VALIDATORS
+          // =============================================================
+
+          // *snort sniff snuffle*
+
+          if (settings.options.sniffHtml) {
+            var message = "";
+            // ---------------------------------------------------------
+            //                                                   PATTERN
+            // ---------------------------------------------------------
+            if ($this.attr("pattern") !== undefined) {
+              message = "Not in the expected format<!-- data-validation-pattern-message to override -->";
+              if ($this.data("validationPatternMessage")) {
+                message = $this.data("validationPatternMessage");
+              }
+              $this.data("validationPatternMessage", message);
+              $this.data("validationPatternRegex", $this.attr("pattern"));
+            }
+            // ---------------------------------------------------------
+            //                                                       MAX
+            // ---------------------------------------------------------
+            if ($this.attr("max") !== undefined || $this.attr("aria-valuemax") !== undefined) {
+              var max = ($this.attr("max") !== undefined ? $this.attr("max") : $this.attr("aria-valuemax"));
+              message = "Too high: Maximum of '" + max + "'<!-- data-validation-max-message to override -->";
+              if ($this.data("validationMaxMessage")) {
+                message = $this.data("validationMaxMessage");
+              }
+              $this.data("validationMaxMessage", message);
+              $this.data("validationMaxMax", max);
+            }
+            // ---------------------------------------------------------
+            //                                                       MIN
+            // ---------------------------------------------------------
+            if ($this.attr("min") !== undefined || $this.attr("aria-valuemin") !== undefined) {
+              var min = ($this.attr("min") !== undefined ? $this.attr("min") : $this.attr("aria-valuemin"));
+              message = "Too low: Minimum of '" + min + "'<!-- data-validation-min-message to override -->";
+              if ($this.data("validationMinMessage")) {
+                message = $this.data("validationMinMessage");
+              }
+              $this.data("validationMinMessage", message);
+              $this.data("validationMinMin", min);
+            }
+            // ---------------------------------------------------------
+            //                                                 MAXLENGTH
+            // ---------------------------------------------------------
+            if ($this.attr("maxlength") !== undefined) {
+              message = "Too long: Maximum of '" + $this.attr("maxlength") + "' characters<!-- data-validation-maxlength-message to override -->";
+              if ($this.data("validationMaxlengthMessage")) {
+                message = $this.data("validationMaxlengthMessage");
+              }
+              $this.data("validationMaxlengthMessage", message);
+              $this.data("validationMaxlengthMaxlength", $this.attr("maxlength"));
+            }
+            // ---------------------------------------------------------
+            //                                                 MINLENGTH
+            // ---------------------------------------------------------
+            if ($this.attr("minlength") !== undefined) {
+              message = "Too short: Minimum of '" + $this.attr("minlength") + "' characters<!-- data-validation-minlength-message to override -->";
+              if ($this.data("validationMinlengthMessage")) {
+                message = $this.data("validationMinlengthMessage");
+              }
+              $this.data("validationMinlengthMessage", message);
+              $this.data("validationMinlengthMinlength", $this.attr("minlength"));
+            }
+            // ---------------------------------------------------------
+            //                                                  REQUIRED
+            // ---------------------------------------------------------
+            if ($this.attr("required") !== undefined || $this.attr("aria-required") !== undefined) {
+              message = settings.builtInValidators.required.message;
+              if ($this.data("validationRequiredMessage")) {
+                message = $this.data("validationRequiredMessage");
+              }
+              $this.data("validationRequiredMessage", message);
+            }
+            // ---------------------------------------------------------
+            //                                                    NUMBER
+            // ---------------------------------------------------------
+            if ($this.attr("type") !== undefined && $this.attr("type").toLowerCase() === "number") {
+              message = settings.builtInValidators.number.message;
+              if ($this.data("validationNumberMessage")) {
+                message = $this.data("validationNumberMessage");
+              }
+              $this.data("validationNumberMessage", message);
+            }
+            // ---------------------------------------------------------
+            //                                                     EMAIL
+            // ---------------------------------------------------------
+            if ($this.attr("type") !== undefined && $this.attr("type").toLowerCase() === "email") {
+              message = "Not a valid email address<!-- data-validator-validemail-message to override -->";
+              if ($this.data("validationValidemailMessage")) {
+                message = $this.data("validationValidemailMessage");
+              } else if ($this.data("validationEmailMessage")) {
+                message = $this.data("validationEmailMessage");
+              }
+              $this.data("validationValidemailMessage", message);
+            }
+            // ---------------------------------------------------------
+            //                                                MINCHECKED
+            // ---------------------------------------------------------
+            if ($this.attr("minchecked") !== undefined) {
+              message = "Not enough options checked; Minimum of '" + $this.attr("minchecked") + "' required<!-- data-validation-minchecked-message to override -->";
+              if ($this.data("validationMincheckedMessage")) {
+                message = $this.data("validationMincheckedMessage");
+              }
+              $this.data("validationMincheckedMessage", message);
+              $this.data("validationMincheckedMinchecked", $this.attr("minchecked"));
+            }
+            // ---------------------------------------------------------
+            //                                                MAXCHECKED
+            // ---------------------------------------------------------
+            if ($this.attr("maxchecked") !== undefined) {
+              message = "Too many options checked; Maximum of '" + $this.attr("maxchecked") + "' required<!-- data-validation-maxchecked-message to override -->";
+              if ($this.data("validationMaxcheckedMessage")) {
+                message = $this.data("validationMaxcheckedMessage");
+              }
+              $this.data("validationMaxcheckedMessage", message);
+              $this.data("validationMaxcheckedMaxchecked", $this.attr("maxchecked"));
+            }
+          }
+
+          // =============================================================
+          //                                       COLLECT VALIDATOR NAMES
+          // =============================================================
+
+          // Get named validators
+          if ($this.data("validation") !== undefined) {
+            validatorNames = $this.data("validation").split(",");
+          }
+
+          // Get extra ones defined on the element's data attributes
+          $.each($this.data(), function (i, el) {
+            var parts = i.replace(/([A-Z])/g, ",$1").split(",");
+            if (parts[0] === "validation" && parts[1]) {
+              validatorNames.push(parts[1]);
+            }
+          });
+
+          // =============================================================
+          //                                     NORMALISE VALIDATOR NAMES
+          // =============================================================
+
+          var validatorNamesToInspect = validatorNames;
+          var newValidatorNamesToInspect = [];
+
+          do // repeatedly expand 'shortcut' validators into their real validators
+          {
+            // Uppercase only the first letter of each name
+            $.each(validatorNames, function (i, el) {
+              validatorNames[i] = formatValidatorName(el);
+            });
+
+            // Remove duplicate validator names
+            validatorNames = $.unique(validatorNames);
+
+            // Pull out the new validator names from each shortcut
+            newValidatorNamesToInspect = [];
+            $.each(validatorNamesToInspect, function(i, el) {
+              if ($this.data("validation" + el + "Shortcut") !== undefined) {
+                // Are these custom validators?
+                // Pull them out!
+                $.each($this.data("validation" + el + "Shortcut").split(","), function(i2, el2) {
+                  newValidatorNamesToInspect.push(el2);
+                });
+              } else if (settings.builtInValidators[el.toLowerCase()]) {
+                // Is this a recognised built-in?
+                // Pull it out!
+                var validator = settings.builtInValidators[el.toLowerCase()];
+                if (validator.type.toLowerCase() === "shortcut") {
+                  $.each(validator.shortcut.split(","), function (i, el) {
+                    el = formatValidatorName(el);
+                    newValidatorNamesToInspect.push(el);
+                    validatorNames.push(el);
+                  });
+                }
+              }
+            });
+
+            validatorNamesToInspect = newValidatorNamesToInspect;
+
+          } while (validatorNamesToInspect.length > 0)
+
+          // =============================================================
+          //                                       SET UP VALIDATOR ARRAYS
+          // =============================================================
+
+          var validators = {};
+
+          $.each(validatorNames, function (i, el) {
+            // Set up the 'override' message
+            var message = $this.data("validation" + el + "Message");
+            var hasOverrideMessage = (message !== undefined);
+            var foundValidator = false;
+            message =
+              (
+                message
+                  ? message
+                  : "'" + el + "' validation failed <!-- Add attribute 'data-validation-" + el.toLowerCase() + "-message' to input to change this message -->"
+              )
+            ;
+
+            $.each(
+              settings.validatorTypes,
+              function (validatorType, validatorTemplate) {
+                if (validators[validatorType] === undefined) {
+                  validators[validatorType] = [];
+                }
+                if (!foundValidator && $this.data("validation" + el + formatValidatorName(validatorTemplate.name)) !== undefined) {
+                  validators[validatorType].push(
+                    $.extend(
+                      true,
+                      {
+                        name: formatValidatorName(validatorTemplate.name),
+                        message: message
+                      },
+                      validatorTemplate.init($this, el)
+                    )
+                  );
+                  foundValidator = true;
+                }
+              }
+            );
+
+            if (!foundValidator && settings.builtInValidators[el.toLowerCase()]) {
+
+              var validator = $.extend(true, {}, settings.builtInValidators[el.toLowerCase()]);
+              if (hasOverrideMessage) {
+                validator.message = message;
+              }
+              var validatorType = validator.type.toLowerCase();
+
+              if (validatorType === "shortcut") {
+                foundValidator = true;
+              } else {
+                $.each(
+                  settings.validatorTypes,
+                  function (validatorTemplateType, validatorTemplate) {
+                    if (validators[validatorTemplateType] === undefined) {
+                      validators[validatorTemplateType] = [];
+                    }
+                    if (!foundValidator && validatorType === validatorTemplateType.toLowerCase()) {
+                      $this.data("validation" + el + formatValidatorName(validatorTemplate.name), validator[validatorTemplate.name.toLowerCase()]);
+                      validators[validatorType].push(
+                        $.extend(
+                          validator,
+                          validatorTemplate.init($this, el)
+                        )
+                      );
+                      foundValidator = true;
+                    }
+                  }
+                );
+              }
+            }
+
+            if (! foundValidator) {
+              $.error("Cannot find validation info for '" + el + "'");
+            }
+          });
+
+          // =============================================================
+          //                                         STORE FALLBACK VALUES
+          // =============================================================
+
+          $helpBlock.data(
+            "original-contents",
+            (
+              $helpBlock.data("original-contents")
+                ? $helpBlock.data("original-contents")
+                : $helpBlock.html()
+            )
+          );
+
+          $helpBlock.data(
+            "original-role",
+            (
+              $helpBlock.data("original-role")
+                ? $helpBlock.data("original-role")
+                : $helpBlock.attr("role")
+            )
+          );
+
+          $controlGroup.data(
+            "original-classes",
+            (
+              $controlGroup.data("original-clases")
+                ? $controlGroup.data("original-classes")
+                : $controlGroup.attr("class")
+            )
+          );
+
+          $this.data(
+            "original-aria-invalid",
+            (
+              $this.data("original-aria-invalid")
+                ? $this.data("original-aria-invalid")
+                : $this.attr("aria-invalid")
+            )
+          );
+
+          // =============================================================
+          //                                                    VALIDATION
+          // =============================================================
+
+          $this.bind(
+            "validation.validation",
+            function (event, params) {
+
+              var value = getValue($this);
+
+              // Get a list of the errors to apply
+              var errorsFound = [];
+
+              $.each(validators, function (validatorType, validatorTypeArray) {
+                if (value || value.length || (params && params.includeEmpty) || (!!settings.validatorTypes[validatorType].blockSubmit && params && !!params.submitting)) {
+                  $.each(validatorTypeArray, function (i, validator) {
+                    if (settings.validatorTypes[validatorType].validate($this, value, validator)) {
+                      errorsFound.push(validator.message);
+                    }
+                  });
+                }
+              });
+
+              return errorsFound;
+            }
+          );
+
+          $this.bind(
+            "getValidators.validation",
+            function () {
+              return validators;
+            }
+          );
+
+          // =============================================================
+          //                                             WATCH FOR CHANGES
+          // =============================================================
+          $this.bind(
+            "submit.validation",
+            function () {
+              return $this.triggerHandler("change.validation", {submitting: true});
+            }
+          );
+          $this.bind(
+            [
+              "keyup",
+              "focus",
+              "blur",
+              "click",
+              "keydown",
+              "keypress",
+              "change"
+            ].join(".validation ") + ".validation",
+            function (e, params) {
+
+              var value = getValue($this);
+
+              var errorsFound = [];
+
+              $controlGroup.find("input,textarea,select").each(function (i, el) {
+                var oldCount = errorsFound.length;
+                $.each($(el).triggerHandler("validation.validation", params), function (j, message) {
+                  errorsFound.push(message);
+                });
+                if (errorsFound.length > oldCount) {
+                  $(el).attr("aria-invalid", "true");
+                } else {
+                  var original = $this.data("original-aria-invalid");
+                  $(el).attr("aria-invalid", (original !== undefined ? original : false));
+                }
+              });
+
+              $form.find("input,select,textarea").not($this).not("[name=\"" + $this.attr("name") + "\"]").trigger("validationLostFocus.validation");
+
+              errorsFound = $.unique(errorsFound.sort());
+
+              // Were there any errors?
+              if (errorsFound.length) {
+                // Better flag it up as a warning.
+                $controlGroup.removeClass("success error").addClass("warning");
+
+                // How many errors did we find?
+                if (settings.options.semanticallyStrict && errorsFound.length === 1) {
+                  // Only one? Being strict? Just output it.
+                  $helpBlock.html(errorsFound[0] + 
+                    ( settings.options.prependExistingHelpBlock ? $helpBlock.data("original-contents") : "" ));
+                } else {
+                  // Multiple? Being sloppy? Glue them together into an UL.
+                  $helpBlock.html("<ul role=\"alert\"><li>" + errorsFound.join("</li><li>") + "</li></ul>" +
+                    ( settings.options.prependExistingHelpBlock ? $helpBlock.data("original-contents") : "" ));
+                }
+              } else {
+                $controlGroup.removeClass("warning error success");
+                if (value.length > 0) {
+                  $controlGroup.addClass("success");
+                }
+                $helpBlock.html($helpBlock.data("original-contents"));
+              }
+
+              if (e.type === "blur") {
+                $controlGroup.removeClass("success");
+              }
+            }
+          );
+          $this.bind("validationLostFocus.validation", function () {
+            $controlGroup.removeClass("success");
+          });
+        });
+      },
+      destroy : function( ) {
+
+        return this.each(
+          function() {
+
+            var
+              $this = $(this),
+              $controlGroup = $this.parents(".form-group").first(),
+              $helpBlock = $controlGroup.find(".help-block").first();
+
+            // remove our events
+            $this.unbind('.validation'); // events are namespaced.
+            // reset help text
+            $helpBlock.html($helpBlock.data("original-contents"));
+            // reset classes
+            $controlGroup.attr("class", $controlGroup.data("original-classes"));
+            // reset aria
+            $this.attr("aria-invalid", $this.data("original-aria-invalid"));
+            // reset role
+            $helpBlock.attr("role", $this.data("original-role"));
+						// remove all elements we created
+						if (createdElements.indexOf($helpBlock[0]) > -1) {
+							$helpBlock.remove();
+						}
+
+          }
+        );
+
+      },
+      collectErrors : function(includeEmpty) {
+
+        var errorMessages = {};
+        this.each(function (i, el) {
+          var $el = $(el);
+          var name = $el.attr("name");
+          var errors = $el.triggerHandler("validation.validation", {includeEmpty: true});
+          errorMessages[name] = $.extend(true, errors, errorMessages[name]);
+        });
+
+        $.each(errorMessages, function (i, el) {
+          if (el.length === 0) {
+            delete errorMessages[i];
+          }
+        });
+
+        return errorMessages;
+
+      },
+      hasErrors: function() {
+
+        var errorMessages = [];
+
+        this.each(function (i, el) {
+          errorMessages = errorMessages.concat(
+            $(el).triggerHandler("getValidators.validation") ? $(el).triggerHandler("validation.validation", {submitting: true}) : []
+          );
+        });
+
+        return (errorMessages.length > 0);
+      },
+      override : function (newDefaults) {
+        defaults = $.extend(true, defaults, newDefaults);
+      }
+    },
+		validatorTypes: {
+      callback: {
+        name: "callback",
+        init: function ($this, name) {
+          return {
+            validatorName: name,
+            callback: $this.data("validation" + name + "Callback"),
+            lastValue: $this.val(),
+            lastValid: true,
+            lastFinished: true
+          };
+        },
+        validate: function ($this, value, validator) {
+          if (validator.lastValue === value && validator.lastFinished) {
+            return !validator.lastValid;
+          }
+
+          if (validator.lastFinished === true)
+          {
+            validator.lastValue = value;
+            validator.lastValid = true;
+            validator.lastFinished = false;
+
+            var rrjqbvValidator = validator;
+            var rrjqbvThis = $this;
+            executeFunctionByName(
+              validator.callback,
+              window,
+              $this,
+              value,
+              function (data) {
+                if (rrjqbvValidator.lastValue === data.value) {
+                  rrjqbvValidator.lastValid = data.valid;
+                  if (data.message) {
+                    rrjqbvValidator.message = data.message;
+                  }
+                  rrjqbvValidator.lastFinished = true;
+                  rrjqbvThis.data("validation" + rrjqbvValidator.validatorName + "Message", rrjqbvValidator.message);
+                  // Timeout is set to avoid problems with the events being considered 'already fired'
+                  setTimeout(function () {
+                    rrjqbvThis.trigger("change.validation");
+                  }, 1); // doesn't need a long timeout, just long enough for the event bubble to burst
+                }
+              }
+            );
+          }
+
+          return false;
+
+        }
+      },
+      ajax: {
+        name: "ajax",
+        init: function ($this, name) {
+          return {
+            validatorName: name,
+            url: $this.data("validation" + name + "Ajax"),
+            lastValue: $this.val(),
+            lastValid: true,
+            lastFinished: true
+          };
+        },
+        validate: function ($this, value, validator) {
+          if (""+validator.lastValue === ""+value && validator.lastFinished === true) {
+            return validator.lastValid === false;
+          }
+
+          if (validator.lastFinished === true)
+          {
+            validator.lastValue = value;
+            validator.lastValid = true;
+            validator.lastFinished = false;
+            $.ajax({
+              url: validator.url,
+              data: "value=" + value + "&field=" + $this.attr("name"),
+              dataType: "json",
+              success: function (data) {
+                if (""+validator.lastValue === ""+data.value) {
+                  validator.lastValid = !!(data.valid);
+                  if (data.message) {
+                    validator.message = data.message;
+                  }
+                  validator.lastFinished = true;
+                  $this.data("validation" + validator.validatorName + "Message", validator.message);
+                  // Timeout is set to avoid problems with the events being considered 'already fired'
+                  setTimeout(function () {
+                    $this.trigger("change.validation");
+                  }, 1); // doesn't need a long timeout, just long enough for the event bubble to burst
+                }
+              },
+              failure: function () {
+                validator.lastValid = true;
+                validator.message = "ajax call failed";
+                validator.lastFinished = true;
+                $this.data("validation" + validator.validatorName + "Message", validator.message);
+                // Timeout is set to avoid problems with the events being considered 'already fired'
+                setTimeout(function () {
+                  $this.trigger("change.validation");
+                }, 1); // doesn't need a long timeout, just long enough for the event bubble to burst
+              }
+            });
+          }
+
+          return false;
+
+        }
+      },
+			regex: {
+				name: "regex",
+				init: function ($this, name) {
+					return {regex: regexFromString($this.data("validation" + name + "Regex"))};
+				},
+				validate: function ($this, value, validator) {
+					return (!validator.regex.test(value) && ! validator.negative)
+						|| (validator.regex.test(value) && validator.negative);
+				}
+			},
+			required: {
+				name: "required",
+				init: function ($this, name) {
+					return {};
+				},
+				validate: function ($this, value, validator) {
+					return !!(value.length === 0  && ! validator.negative)
+						|| !!(value.length > 0 && validator.negative);
+				},
+        blockSubmit: true
+			},
+			match: {
+				name: "match",
+				init: function ($this, name) {
+					var element = $this.parents("form").first().find("[name=\"" + $this.data("validation" + name + "Match") + "\"]").first();
+					element.bind("validation.validation", function () {
+						$this.trigger("change.validation", {submitting: true});
+					});
+					return {"element": element};
+				},
+				validate: function ($this, value, validator) {
+					return (value !== validator.element.val() && ! validator.negative)
+						|| (value === validator.element.val() && validator.negative);
+				},
+        blockSubmit: true
+			},
+			max: {
+				name: "max",
+				init: function ($this, name) {
+					return {max: $this.data("validation" + name + "Max")};
+				},
+				validate: function ($this, value, validator) {
+					return (parseFloat(value, 10) > parseFloat(validator.max, 10) && ! validator.negative)
+						|| (parseFloat(value, 10) <= parseFloat(validator.max, 10) && validator.negative);
+				}
+			},
+			min: {
+				name: "min",
+				init: function ($this, name) {
+					return {min: $this.data("validation" + name + "Min")};
+				},
+				validate: function ($this, value, validator) {
+					return (parseFloat(value) < parseFloat(validator.min) && ! validator.negative)
+						|| (parseFloat(value) >= parseFloat(validator.min) && validator.negative);
+				}
+			},
+			maxlength: {
+				name: "maxlength",
+				init: function ($this, name) {
+					return {maxlength: $this.data("validation" + name + "Maxlength")};
+				},
+				validate: function ($this, value, validator) {
+					return ((value.length > validator.maxlength) && ! validator.negative)
+						|| ((value.length <= validator.maxlength) && validator.negative);
+				}
+			},
+			minlength: {
+				name: "minlength",
+				init: function ($this, name) {
+					return {minlength: $this.data("validation" + name + "Minlength")};
+				},
+				validate: function ($this, value, validator) {
+					return ((value.length < validator.minlength) && ! validator.negative)
+						|| ((value.length >= validator.minlength) && validator.negative);
+				}
+			},
+			maxchecked: {
+				name: "maxchecked",
+				init: function ($this, name) {
+					var elements = $this.parents("form").first().find("[name=\"" + $this.attr("name") + "\"]");
+					elements.bind("click.validation", function () {
+						$this.trigger("change.validation", {includeEmpty: true});
+					});
+					return {maxchecked: $this.data("validation" + name + "Maxchecked"), elements: elements};
+				},
+				validate: function ($this, value, validator) {
+					return (validator.elements.filter(":checked").length > validator.maxchecked && ! validator.negative)
+						|| (validator.elements.filter(":checked").length <= validator.maxchecked && validator.negative);
+				},
+        blockSubmit: true
+			},
+			minchecked: {
+				name: "minchecked",
+				init: function ($this, name) {
+					var elements = $this.parents("form").first().find("[name=\"" + $this.attr("name") + "\"]");
+					elements.bind("click.validation", function () {
+						$this.trigger("change.validation", {includeEmpty: true});
+					});
+					return {minchecked: $this.data("validation" + name + "Minchecked"), elements: elements};
+				},
+				validate: function ($this, value, validator) {
+					return (validator.elements.filter(":checked").length < validator.minchecked && ! validator.negative)
+						|| (validator.elements.filter(":checked").length >= validator.minchecked && validator.negative);
+				},
+        blockSubmit: true
 			}
 		},
-		updateSizes: updateSizes,
-		updatePolyfill: updatePolyfill
+		builtInValidators: {
+			email: {
+				name: "Email",
+				type: "shortcut",
+				shortcut: "validemail"
+			},
+			validemail: {
+				name: "Validemail",
+				type: "regex",
+				regex: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\.[A-Za-z]{2,4}",
+				message: "Not a valid email address<!-- data-validator-validemail-message to override -->"
+			},
+			passwordagain: {
+				name: "Passwordagain",
+				type: "match",
+				match: "password",
+				message: "Does not match the given password<!-- data-validator-paswordagain-message to override -->"
+			},
+			positive: {
+				name: "Positive",
+				type: "shortcut",
+				shortcut: "number,positivenumber"
+			},
+			negative: {
+				name: "Negative",
+				type: "shortcut",
+				shortcut: "number,negativenumber"
+			},
+			number: {
+				name: "Number",
+				type: "regex",
+				regex: "([+-]?\\\d+(\\\.\\\d*)?([eE][+-]?[0-9]+)?)?",
+				message: "Must be a number<!-- data-validator-number-message to override -->"
+			},
+			integer: {
+				name: "Integer",
+				type: "regex",
+				regex: "[+-]?\\\d+",
+				message: "No decimal places allowed<!-- data-validator-integer-message to override -->"
+			},
+			positivenumber: {
+				name: "Positivenumber",
+				type: "min",
+				min: 0,
+				message: "Must be a positive number<!-- data-validator-positivenumber-message to override -->"
+			},
+			negativenumber: {
+				name: "Negativenumber",
+				type: "max",
+				max: 0,
+				message: "Must be a negative number<!-- data-validator-negativenumber-message to override -->"
+			},
+			required: {
+				name: "Required",
+				type: "required",
+				message: "This is required<!-- data-validator-required-message to override -->"
+			},
+			checkone: {
+				name: "Checkone",
+				type: "minchecked",
+				minchecked: 1,
+				message: "Check at least one option<!-- data-validation-checkone-message to override -->"
+			}
+		}
 	};
-}));
 
-/*jslint white:false, onevar:true, undef:true, nomen:true, eqeqeq:true, plusplus:true, bitwise:true, regexp:true, newcap:true, immed:true, strict:false, browser:true */
-/*global jQuery:false, document:false */
-'use strict';
+	var formatValidatorName = function (name) {
+		return name
+			.toLowerCase()
+			.replace(
+				/(^|\s)([a-z])/g ,
+				function(m,p1,p2) {
+					return p1+p2.toUpperCase();
+				}
+			)
+		;
+	};
 
-(function ($) {
-  $(document).ready(function () {
-    if ($('body').hasClass('lt-ie7')) {return; }
-    // Application specific javascript code goes here
+	var getValue = function ($this) {
+		// Extract the value we're talking about
+		var value = $this.val();
+		var type = $this.attr("type");
+		if (type === "checkbox") {
+			value = ($this.is(":checked") ? value : "");
+		}
+		if (type === "radio") {
+			value = ($('input[name="' + $this.attr("name") + '"]:checked').length > 0 ? value : "");
+		}
+		return value;
+	};
+
+  function regexFromString(inputstring) {
+		return new RegExp("^" + inputstring + "$");
+	}
+
+  /**
+   * Thanks to Jason Bunting via StackOverflow.com
+   *
+   * http://stackoverflow.com/questions/359788/how-to-execute-a-javascript-function-when-i-have-its-name-as-a-string#answer-359910
+   * Short link: http://tinyurl.com/executeFunctionByName
+  **/
+  function executeFunctionByName(functionName, context /*, args*/) {
+    var args = Array.prototype.slice.call(arguments).splice(2);
+    var namespaces = functionName.split(".");
+    var func = namespaces.pop();
+    for(var i = 0; i < namespaces.length; i++) {
+      context = context[namespaces[i]];
+    }
+    return context[func].apply(this, args);
   }
-  );
+
+	$.fn.jqBootstrapValidation = function( method ) {
+
+		if ( defaults.methods[method] ) {
+			return defaults.methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+		} else if ( typeof method === 'object' || ! method ) {
+			return defaults.methods.init.apply( this, arguments );
+		} else {
+		$.error( 'Method ' +  method + ' does not exist on jQuery.jqBootstrapValidation' );
+			return null;
+		}
+
+	};
+
+  $.jqBootstrapValidation = function (options) {
+    $(":input").not("[type=image],[type=submit]").jqBootstrapValidation.apply(this,arguments);
+  };
+
+})( jQuery );
+
+/*!
+loadCSS: load a CSS file asynchronously.
+[c]2014 @scottjehl, Filament Group, Inc.
+Licensed MIT
+*/
+function loadCSS( href, before, media ){
+  "use strict";
+  // Arguments explained:
+  // `href` is the URL for your CSS file.
+  // `before` optionally defines the element we'll use as a reference for injecting our <link>
+  // By default, `before` uses the first <script> element in the page.
+  // However, since the order in which stylesheets are referenced matters, you might need a more specific location in your document.
+  // If so, pass a different reference element to the `before` argument and it'll insert before that instead
+  // note: `insertBefore` is used instead of `appendChild`, for safety re: http://www.paulirish.com/2011/surefire-dom-element-insertion/
+  var ss = window.document.createElement( "link" );
+  var ref = before || window.document.getElementsByTagName( "script" )[ 0 ];
+  var sheets = window.document.styleSheets;
+  ss.rel = "stylesheet";
+  ss.href = href;
+  // temporarily, set media to something non-matching to ensure it'll fetch without blocking render
+  ss.media = "only x";
+  // inject link
+  ref.parentNode.insertBefore( ss, ref );
+  // This function sets the link's media back to `all` so that the stylesheet applies once it loads
+  // It is designed to poll until document.styleSheets includes the new sheet.
+  function toggleMedia(){
+    var defined;
+    for( var i = 0; i < sheets.length; i++ ){
+      if( sheets[ i ].href && sheets[ i ].href.indexOf( href ) > -1 ){
+        defined = true;
+      }
+    }
+    if( defined ){
+      ss.media = media || "all";
+    }
+    else {
+      setTimeout( toggleMedia );
+    }
+  }
+  toggleMedia();
+  return ss;
+}
+'use strict';
+(function ($) {
+    loadCSS( "css/v10.min.css", window.document.getElementsByTagName( "link" )[ 0 ] );
+    var $appNavbar = $('#app-navbar');
+    $(window).scroll(function () {
+        if ($appNavbar.offset().top > 50) {
+            $appNavbar.addClass('app-navbar-collapse');
+        } else {
+            $appNavbar.removeClass('app-navbar-collapse');
+        }
+    });
+    $(document).ready(function () {
+        if ($('body').hasClass('lt-ie7')) {
+            return;
+        };
+        var bLazy = new Blazy({
+            selector: '.app-img'
+        });
+        $('.carousel').carousel();
+        $('a[href*=#]:not([href=#])').click(function () {
+            if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
+                var target = $(this.hash);
+                target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
+                if (target.length) {
+                    $('html,body').animate({ scrollTop: target.offset().top }, 1000);
+                    return false;
+                }
+            }
+        });
+    });
 }(jQuery));

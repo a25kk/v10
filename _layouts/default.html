@@ -7,12 +7,11 @@
     <!-- Meta, title, CSS, favicons, etc. -->
     {% include head.html %}
   </head>
-  <body>
+  <body id="page-top">
     <a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
-    {% include toolbar.html %}
     <!-- App master nav -->
     {% include navbar.html %}
-    {% include brandbar.html %}
+    {% include carousel.html %}
 
     <div class="app-content" role="main">
           {{ content }}

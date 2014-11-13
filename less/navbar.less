@@ -1,0 +1,45 @@
+.app-navbar-brand {
+	padding: (@line-height-computed / 3) 0 0 @line-height-computed;
+	color: #000;
+    font-size: 1.5rem;
+}
+
+.app-navbar-brand-image {	
+	padding: 0;
+	float: left;
+}
+
+.app-brandname-logo {
+	.img-responsive();
+}
+
+.app-navbar {
+	border-top: 20px solid @app-gray;
+	border-bottom: 0;
+}
+
+@media(min-width:767px) {
+	.app-navbar {
+		float: right;
+		padding: 40px 0;
+		-webkit-transition: background .5s ease-in-out,padding .5s ease-in-out;
+		-moz-transition: background .5s ease-in-out,padding .5s ease-in-out;
+		transition: background .5s ease-in-out,padding .5s ease-in-out;
+	}
+	.app-navbar-collapse {
+		padding: 20px 0;
+	}
+}
+
+.navbar-nav {
+	float: right !important;
+}
+
+.navbar-nav > li > a {
+    padding: (@line-height-computed / 4) (@line-height-computed / 2) (@line-height-computed / 2) (@line-height-computed / 2);
+    text-transform: uppercase;    
+}
+
+.navbar-nav > li > a:focus {
+    border-bottom: 10px solid @app-gray;
+}
