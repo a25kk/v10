@@ -13729,22 +13729,20 @@ a:focus
     height: 100%;
     padding-top: 150px;
 }
-.app-clientsbar
+.app-clientsbar-content
 {
-    display: inline-block;
-
+    width: 100%;
     padding: 5%;
 
-    border: 1px solid black;
-    background: #999;
+    background: #333;
 }
-.app-clientsbar ul
+.app-clientsbar-content ul
 {
     list-style-type: none;
 }
-.app-clientsbar ul li
+.app-clientsbar-content ul li
 {
-    display: inline;
+    display: inline-table;
 }
 .app-item
 {
@@ -13816,8 +13814,13 @@ a:focus
 
     max-width: 100%;
     height: auto;
+}
+.app-client-logo
+{
+    display: block;
 
-    background: #000;
+    max-width: 100%;
+    height: auto;
 }
 .embed-responsive
 {
