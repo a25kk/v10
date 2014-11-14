@@ -13729,6 +13729,23 @@ a:focus
     height: 100%;
     padding-top: 150px;
 }
+.app-clientsbar
+{
+    display: inline-block;
+
+    padding: 5%;
+
+    border: 1px solid black;
+    background: #999;
+}
+.app-clientsbar ul
+{
+    list-style-type: none;
+}
+.app-clientsbar ul li
+{
+    display: inline;
+}
 .app-item
 {
     padding-bottom: 2.14285714rem;
