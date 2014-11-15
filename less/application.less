@@ -14,7 +14,7 @@ a:focus  {
 }
 
 .app-content {
-  .container();
+  //.container();
 
   ul {
   	list-style-position: inside;
@@ -75,6 +75,8 @@ a:focus  {
     padding-top: 150px;
 }
 
+// Clients Section Specials
+
 .app-clientsbar-content {
     width: 100%;
     padding: 5%;
@@ -84,10 +86,20 @@ a:focus  {
         list-style-type: none;
         li {
             display: inline-table;
-        }
-        
+
+            a:hover {
+                opacity: 0.5;
+            }
+        }        
     }
 }
+
+.app-clientsbar-title {
+        .container();
+        font-size: (@font-size-base * 2);
+        text-transform: uppercase;
+        padding-bottom: (@line-height-computed * 2);
+    }
 
 .app-item {
 	border-bottom: 1px solid @app-gray;
@@ -109,32 +121,29 @@ a:focus  {
     .img-responsive();
 }
 
-.app-client-logo {
-    .img-responsive();
-}
-
 .embed-responsive {
 	margin-bottom: @line-height-computed;
 }
 
 
 .form-group {
-        margin-bottom: 25px;
-        input,
-        textarea {
-            padding: 20px;
-        }
-        input.form-control {
-            height: auto;
-        }
-        textarea.form-control {
-            height: 252px;
-        }
+    margin-bottom: 25px;
+    input,
+    textarea {
+        padding: 20px;
     }
-    .form-control:focus {
-        border-color: @brand-primary;
-        box-shadow: none;
+    input.form-control {
+        height: auto;
     }
+    textarea.form-control {
+        height: 252px;
+    }
+}
+
+.form-control:focus {
+    border-color: @brand-primary;
+    box-shadow: none;
+}
 
 .app-btn {
     background: @app-gray;
@@ -143,7 +152,6 @@ a:focus  {
 }
 
 // Transition lazy loaded images
-// TODO: refactor with custom classes
 .b-lazy {
     transition: opacity 500ms ease-in-out;
     max-width: 100%;

@@ -7981,10 +7981,10 @@ ul.formTabs:after,
 .app-brand:after,
 .app-footer-content:before,
 .app-footer-content:after,
-.app-content:before,
-.app-content:after,
 .app-section:before,
-.app-section:after
+.app-section:after,
+.app-clientsbar-title:before,
+.app-clientsbar-title:after
 {
     display: table;
 
@@ -8010,8 +8010,8 @@ ul.formTabs:after,
 .app-brandbar-content:after,
 .app-brand:after,
 .app-footer-content:after,
-.app-content:after,
-.app-section:after
+.app-section:after,
+.app-clientsbar-title:after
 {
     clear: both;
 }
@@ -13487,7 +13487,6 @@ app-page-abstract
     padding: 1.42857143rem;
 
     color: white;
-    border-top: 1px solid #eee;
     background: #009bce;
 }
 .app-footer-content
@@ -13583,49 +13582,6 @@ a:focus
     text-decoration: none;
 
     outline: none;
-}
-.app-content
-{
-    margin-right: auto;
-    margin-left: auto;
-    padding-right: 15px;
-    padding-left: 15px;
-}
-@media (min-width: 768px)
-{
-    .app-content
-    {
-        width: 750px;
-    }
-}
-@media (min-width: 992px)
-{
-    .app-content
-    {
-        width: 970px;
-    }
-}
-@media (min-width: 1200px)
-{
-    .app-content
-    {
-        width: 1170px;
-    }
-}
-.app-content > .navbar-header,
-.app-content > .navbar-collapse
-{
-    margin-right: -15px;
-    margin-left: -15px;
-}
-@media (min-width: 768px)
-{
-    .app-content > .navbar-header,
-    .app-content > .navbar-collapse
-    {
-        margin-right: 0;
-        margin-left: 0;
-    }
 }
 .app-content ul
 {
@@ -13744,6 +13700,58 @@ a:focus
 {
     display: inline-table;
 }
+.app-clientsbar-content ul li a:hover
+{
+    opacity: .5;
+}
+.app-clientsbar-title
+{
+    font-size: 2rem;
+
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 15px;
+    padding-bottom: 2.85714286rem;
+    padding-left: 15px;
+
+    text-transform: uppercase;
+}
+@media (min-width: 768px)
+{
+    .app-clientsbar-title
+    {
+        width: 750px;
+    }
+}
+@media (min-width: 992px)
+{
+    .app-clientsbar-title
+    {
+        width: 970px;
+    }
+}
+@media (min-width: 1200px)
+{
+    .app-clientsbar-title
+    {
+        width: 1170px;
+    }
+}
+.app-clientsbar-title > .navbar-header,
+.app-clientsbar-title > .navbar-collapse
+{
+    margin-right: -15px;
+    margin-left: -15px;
+}
+@media (min-width: 768px)
+{
+    .app-clientsbar-title > .navbar-header,
+    .app-clientsbar-title > .navbar-collapse
+    {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
 .app-item
 {
     padding-bottom: 2.14285714rem;
@@ -13809,13 +13817,6 @@ a:focus
     }
 }
 .app-img
-{
-    display: block;
-
-    max-width: 100%;
-    height: auto;
-}
-.app-client-logo
 {
     display: block;
 
