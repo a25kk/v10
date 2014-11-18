@@ -13883,6 +13883,53 @@ a:focus
 {
     font-size: 1rem;
 }
+.app-team-social
+{
+    display: inline-block;
+
+    width: 100%;
+    padding: .71428571rem;
+
+    background-color: #fff;
+}
+.app-team-social ul
+{
+    float: right;
+
+    margin: 0;
+    padding: 0;
+
+    list-style-type: none;
+}
+.app-team-social ul li
+{
+    display: inline-block;
+
+    margin-right: 3px;
+    margin-left: 3px;
+
+    text-align: center;
+}
+.app-team-social ul li a
+{
+    display: inline-block;
+
+    width: 36px;
+    height: 36px;
+
+    -webkit-transition: all .2s ease-in-out 0s;
+         -o-transition: all .2s ease-in-out 0s;
+            transition: all .2s ease-in-out 0s;
+
+    color: #666;
+    border: 1px solid #666;
+    border-radius: 50%;
+}
+.app-team-social ul li a i
+{
+    font-size: 17px;
+    line-height: 36px;
+}
 .form-group
 {
     margin-bottom: 25px;
