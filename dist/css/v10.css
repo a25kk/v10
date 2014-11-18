@@ -7984,7 +7984,9 @@ ul.formTabs:after,
 .app-section:before,
 .app-section:after,
 .app-clientsbar-title:before,
-.app-clientsbar-title:after
+.app-clientsbar-title:after,
+.app-row:before,
+.app-row:after
 {
     display: table;
 
@@ -8011,7 +8013,8 @@ ul.formTabs:after,
 .app-brand:after,
 .app-footer-content:after,
 .app-section:after,
-.app-clientsbar-title:after
+.app-clientsbar-title:after,
+.app-row:after
 {
     clear: both;
 }
@@ -13780,6 +13783,12 @@ a:focus
 {
     clear: both;
 }
+.app-row
+{
+    margin-right: -15px;
+    margin-bottom: 1.42857143rem;
+    margin-left: -15px;
+}
 .app-content-left
 {
     position: relative;
@@ -13796,6 +13805,45 @@ a:focus
         float: left;
 
         width: 50%;
+    }
+}
+.app-content-left:before,
+.app-content-left:after
+{
+    display: table;
+
+    content: ' ';
+}
+.app-content-left:after
+{
+    clear: both;
+}
+.app-content-left:before,
+.app-content-left:after
+{
+    display: table;
+
+    content: ' ';
+}
+.app-content-left:after
+{
+    clear: both;
+}
+.app-content-left-fourth
+{
+    position: relative;
+
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+@media (min-width: 992px)
+{
+    .app-content-left-fourth
+    {
+        float: left;
+
+        width: 25%;
     }
 }
 .app-content-right

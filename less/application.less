@@ -107,9 +107,19 @@ a:focus  {
 	.clearfix();
 }
 
+.app-row {
+    .row();
+    margin-bottom: @line-height-computed;
+}
+
 .app-content-left {
     .make-md-column(6);
+    .clearfix();
     padding-left: 0;
+}
+
+.app-content-left-fourth {
+    .make-md-column(3);
 }
 
 .app-content-right {
