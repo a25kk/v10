@@ -13875,6 +13875,14 @@ a:focus
 {
     margin-bottom: 1.42857143rem;
 }
+.team h2
+{
+    font-size: 1.5rem;
+}
+.team h3
+{
+    font-size: 1rem;
+}
 .form-group
 {
     margin-bottom: 25px;
