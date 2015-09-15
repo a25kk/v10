@@ -41,8 +41,28 @@ a:focus  {
 
 .intro-section {
     height: 100%;
-    padding-top: 125px;
-    background: #000;
+    //padding-top: 125px;
+    background: transparent;
+}
+
+.app-intro-info {
+    .container();
+    position: absolute;
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    top: 20%;
+    text-align: center;
+    color: #fff;
+    border-top: 10px solid #fff;
+    border-bottom: 10px solid #fff;
+    h1 {
+        text-transform: uppercase;
+    }
+    @media (min-width: @screen-sm-min) {
+        top: 40%;
+    }
 }
 
 .agentur-section {

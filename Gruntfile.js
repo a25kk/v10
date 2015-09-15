@@ -2,15 +2,16 @@ module.exports = function (grunt) {
     'use strict';
     require('time-grunt')(grunt);
     require('jit-grunt')(grunt);
-    grunt.initConfig({
-        appconfig: {
-            dev: require('./bower.json').appPath || '_site',
+    var config = {
+            app: 'app',
+            dev: '_site',
             dist: 'dist'
-        },
+        };
+    grunt.initConfig({
+        config: config,
         pkg: grunt.file.readJSON('package.json'),
         banner: '/*!\n' + '* <%= pkg.name %> v<%= pkg.version %> by Ade25\n' + '* Copyright <%= pkg.author %>\n' + '* Licensed under <%= pkg.licenses %>.\n' + '*\n' + '* Designed and built by ade25\n' + '*/\n',
         jqueryCheck: 'if (typeof jQuery === "undefined") { throw new Error("We require jQuery") }\n\n',
-        clean: { dist: ['<%= appconfig.dist %>'] },
         jshint: {
             options: { jshintrc: 'js/.jshintrc' },
             grunt: { src: 'Gruntfile.js' },
@@ -32,29 +33,29 @@ module.exports = function (grunt) {
                     'bower_components/modernizr/modernizr.js',
                     'bower_components/bootstrap/dist/js/bootstrap.js',
                     'bower_components/hideShowPassword/hideShowPassword.js',
-                    'bower_components/blazy/blazy.js',                
+                    'bower_components/blazy/blazy.js',
                     'js/contact_me.js',
                     'js/jqBootstrapValidation.js',
                     'js/loadcss.js',
                     'js/main.js'
                 ],
-                dest: '<%= appconfig.dist %>/js/<%= pkg.name %>.js'
+                dest: '<%= config.dist %>/js/<%= pkg.name %>.js'
             },
             theme: {
                 src: [
                     'bower_components/bootstrap/dist/js/bootstrap.js',
                     'bower_components/hideShowPassword/hideShowPassword.js',
-                    'bower_components/lazysizes/lazysizes.js',
+                    'bower_components/blazy/blazy.js',
                     'js/main.js'
                 ],
-                dest: '<%= appconfig.dist %>/js/main.js'
+                dest: '<%= config.dist %>/js/main.js'
             }
         },
         uglify: {
             options: { banner: '<%= banner %>' },
             dist: {
                 src: ['<%= concat.dist.dest %>'],
-                dest: '<%= appconfig.dist %>/js/<%= pkg.name %>.min.js'
+                dest: '<%= config.dist %>/js/<%= pkg.name %>.min.js'
             }
         },
         less: {
@@ -64,9 +65,9 @@ module.exports = function (grunt) {
                     sourceMap: true,
                     outputSourceFiles: true,
                     sourceMapURL: '<%= pkg.name %>.css.map',
-                    sourceMapFilename: '<%= appconfig.dist %>/css/<%= pkg.name %>.css.map'
+                    sourceMapFilename: '<%= config.dist %>/css/<%= pkg.name %>.css.map'
                 },
-                files: { '<%= appconfig.dist %>/css/<%= pkg.name %>.css': 'less/styles.less' }
+                files: { '<%= config.dist %>/css/<%= pkg.name %>.css': 'less/styles.less' }
             }
         },
         autoprefixer: {
@@ -84,12 +85,12 @@ module.exports = function (grunt) {
             },
             core: {
                 options: { map: true },
-                src: '<%= appconfig.dist %>/css/<%= pkg.name %>.css'
+                src: '<%= config.dist %>/css/<%= pkg.name %>.css'
             }
         },
         csslint: {
             options: { csslintrc: 'less/.csslintrc' },
-            src: '<%= appconfig.dist %>/css/<%= pkg.name %>.css'
+            src: '<%= config.dist %>/css/<%= pkg.name %>.css'
         },
         cssmin: {
             options: {
@@ -97,12 +98,12 @@ module.exports = function (grunt) {
                 keepSpecialComments: '*',
                 noAdvanced: true
             },
-            core: { files: { '<%= appconfig.dist %>/css/<%= pkg.name %>.min.css': 'dist/css/<%= pkg.name %>.css' } }
+            core: { files: { '<%= config.dist %>/css/<%= pkg.name %>.min.css': 'dist/css/<%= pkg.name %>.css' } }
         },
         csscomb: {
             sort: {
                 options: { config: 'less/.csscomb.json' },
-                files: { '<%= appconfig.dist %>/css/<%= pkg.name %>.css': ['dist/css/<%= pkg.name %>.css'] }
+                files: { '<%= config.dist %>/css/<%= pkg.name %>.css': ['dist/css/<%= pkg.name %>.css'] }
             }
         },
         criticalcss: {
@@ -111,7 +112,7 @@ module.exports = function (grunt) {
                     url: 'http://rms.kreativkombinat.de',
                     width: 1200,
                     height: 900,
-                    outputfile: '<%= appconfig.dist %>/css/critical.css',
+                    outputfile: '<%= config.dist %>/css/critical.css',
                     filename: '<%= pkg.name %>.min.css'
                 }
             }
@@ -122,83 +123,95 @@ module.exports = function (grunt) {
                 flatten: true,
                 cwd: 'bower_components/',
                 src: ['font-awesome/fonts/*'],
-                dest: '<%= appconfig.dist %>/assets/fonts/'
+                dest: '<%= config.dist %>/assets/fonts/'
             },
             ico: {
                 expand: true,
                 flatten: true,
                 cwd: 'bower_components/',
                 src: ['bootstrap/assets/ico/*'],
-                dest: '<%= appconfig.dist %>/assets/ico/'
+                dest: '<%= config.dist %>/assets/ico/'
             },
             favicon: {
                 expand: true,
                 flatten: true,
                 src: ['assets/ico/*'],
-                dest: '<%= appconfig.dist %>/assets/ico/'
+                dest: '<%= config.dist %>/assets/ico/'
             }
         },
         imagemin: {
             png: {
-                options: {
-                    optimizationLevel: 7
-                },
+                options: { optimizationLevel: 7 },
                 files: [{
-                    expand: true,
-                    cwd: 'assets/img',
-                    src: ['**/*.png'],
-                    dest: '<%= appconfig.dist %>/assets/img/',
-                    ext: '.png'
-                }]
+                        expand: true,
+                        cwd: 'assets/img',
+                        src: ['**/*.png'],
+                        dest: '<%= config.dist %>/assets/img/',
+                        ext: '.png'
+                    }]
             },
             jpg: {
-                options: {
-                    progressive: true
-                },
+                options: { progressive: true },
                 files: [{
-                    expand: true,
-                    cwd: 'assets/img/',
-                    src: ['**/*.jpg'],
-                    dest: '<%= appconfig.dist %>/assets/img/',
-                    ext: '.jpg'
-                }]
+                        expand: true,
+                        cwd: 'assets/img/',
+                        src: ['**/*.jpg'],
+                        dest: '<%= config.dist %>/assets/img/',
+                        ext: '.jpg'
+                    }]
             }
         },
         svgmin: {
             dist: {
                 files: [{
-                    expand: true,
-                    cwd: 'assets/img/',
-                    src: '{,*/}*.svg',
-                    dest: '<%= appconfig.dist %>/assets/img/'
-                }]
+                        expand: true,
+                        cwd: 'assets/img/',
+                        src: '{,*/}*.svg',
+                        dest: '<%= config.dist %>/assets/img/'
+                    }]
             }
         },
         filerev: {
             options: {
                 encoding: 'utf8',
                 algorithm: 'md5',
-                length: 8
+                length: 12
             },
             assets: {
                 src: [
-                    '<%= appconfig.dist %>/js/{,*/}*.js',
-                    '<%= appconfig.dist %>/css/{,*/}*.css'
+                    '<%= config.dist %>/js/<%= pkg.name %>.min.js',
+                    '<%= config.dist %>/css/<%= pkg.name %>.min.css'
                 ]
             },
             files: {
                 src: [
-                    '<%= appconfig.dist %>/assets/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
-                    '<%= appconfig.dist %>/assets/fonts/*'
+                    '<%= config.dist %>/assets/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
+                    '<%= config.dist %>/assets/fonts/*'
                 ]
             }
         },
-        filerev_replace: {
-            options: { assets_root: '<%= appconfig.dist %>' },
-            compiled_assets: { src: '<%= appconfig.dist %>/*.{css,js}' },
-            views: {
-                options: { views_root: '<%= appconfig.dist %>' },
-                src: '<%= appconfig.dist %>/*.html'
+        usemin: {
+            html: ['<%= config.dist %>/{,*/}*.html'],
+            htmlcustom: ['<%= config.dist %>/*.html'],
+            css: ['<%= config.dist %>/css/*.css'],
+            options: {
+                assetsDirs: [
+                    '<%= config.dist %>',
+                    '<%= config.dist %>/css',
+                    '<%= config.dist %>/assets'
+                ],
+                patterns: {
+                    htmlcustom: [
+                        [
+                            /(?:src=|url\(\s*)['"]?([^'"\)(\?|#)]+)['"]?\s*\)?/gm,
+                            'Replacing src references in inline javascript'
+                        ],
+                        [
+                            /(?:data-src=|url\(\s*)['"]?([^'"\)(\?|#)]+)['"]?\s*\)?/gm,
+                            'Update the img data-src attributes with the new img filenames'
+                        ]
+                    ]
+                }
             }
         },
         qunit: {
@@ -228,51 +241,88 @@ module.exports = function (grunt) {
                 },
                 files: [{
                         expand: true,
-                        cwd: '<%= appconfig.dev %>',
+                        cwd: '<%= config.dev %>',
                         src: [
                             '*.html',
                             '{,*/}*.html'
                         ],
-                        dest: '<%= appconfig.dist %>'
+                        dest: '<%= config.dist %>'
                     }]
             }
         },
-        sed: {
-            cleanAssetsPath: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../../assets/',
-                replacement: '../assets/',
-                recursive: true
+        replace: {
+            dist: {
+                options: {
+                    patterns: [
+                        {
+                            match: '../assets/',
+                            replacement: 'assets/'
+                        },
+                        {
+                            match: '../../assets/',
+                            replacement: '../assets/'
+                        },
+                        {
+                            match: '../../<%= config.dist %>/css/<%= pkg.name %>.min.css',
+                            replacement: '../css/<%= pkg.name %>.min.css'
+                        },
+                        {
+                            match: '../<%= config.dist %>/css/<%= pkg.name %>.min.css',
+                            replacement: 'css/<%= pkg.name %>.min.css'
+                        },
+                        {
+                            match: '../../<%= config.dist %>/js/*.js',
+                            replacement: '../js/<%= pkg.name %>.min.js'
+                        },
+                        {
+                            match: '../<%= config.dist %>/js/<%= pkg.name %>.min.js',
+                            replacement: 'js/<%= pkg.name %>.min.js'
+                        }
+                    ],
+                    usePrefix: false,
+                    preserveOrder: true
+                },
+                files: [{
+                        expand: true,
+                        cwd: '<%= config.dev %>',
+                        src: [
+                            '*.html',
+                            '{,*/}*.html'
+                        ],
+                        dest: '<%= config.dev %>'
+                    }]
+            }
+        },
+        clean: {
+            dist: {
+                files: [{
+                        dot: true,
+                        src: ['<%= config.dist %>']
+                    }]
             },
-            cleanCSSFP: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../../<%= appconfig.dist %>/css/<%= pkg.name %>.min.css',
-                replacement: '../css/<%= pkg.name %>.min.css',
-                recursive: true
+            revved: {
+                files: [{
+                        dot: true,
+                        src: [
+                            '<%= config.dist %>/js/*.min.*.js',
+                            '<%= config.dist %>/css/*.min.*.css'
+                        ]
+                    }]
             },
-            cleanCSS: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../<%= appconfig.dist %>/css/<%= pkg.name %>.min.css',
-                replacement: 'css/<%= pkg.name %>.min.css',
-                recursive: true
+            assets: {
+                files: [{
+                        dot: true,
+                        src: ['<%= config.dist %>/assets/*']
+                    }]
             },
-            cleanJSFP: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../../<%= appconfig.dist %>/js/<%= pkg.name %>.min.js',
-                replacement: '../js/<%= pkg.name %>.min.js',
-                recursive: true
-            },
-            cleanJS: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../<%= appconfig.dist %>/js/<%= pkg.name %>.min.js',
-                replacement: 'js/<%= pkg.name %>.min.js',
-                recursive: true
-            },
-            cleanImgPath: {
-                path: '<%= appconfig.dist %>/',
-                pattern: '../dist/assets/img/',
-                replacement: 'assets/img/',
-                recursive: true
+            server: {
+                files: [{
+                        dot: true,
+                        src: [
+                            '<%= config.dist %>/*',
+                            '!<%= config.dist %>/assets'
+                        ]
+                    }]
             }
         },
         validation: {
@@ -286,7 +336,7 @@ module.exports = function (grunt) {
                     'Element img is missing required attribute src.'
                 ]
             },
-            files: { src: ['<%= appconfig.dev %>/**/*.html'] }
+            files: { src: ['<%= config.dev %>/**/*.html'] }
         },
         watch: {
             js: {
@@ -295,24 +345,33 @@ module.exports = function (grunt) {
                 options: { livereload: true }
             },
             styles: {
-                files: ['<%= appconfig.dev %>/styles/{,*/}*.css'],
+                files: ['<%= config.dev %>/css/{,*/}*.css'],
                 tasks: [
                     'newer:copy:styles',
                     'autoprefixer'
                 ]
             },
+            html: {
+                files: ['*.html'],
+                tasks: ['jekyll:theme', 'replace', 'htmlmin']
+            },
             less: {
                 files: 'less/*.less',
-                tasks: ['less'],
+                tasks: [
+                    'less',
+                    'autoprefixer',
+                    'csscomb',
+                    'cssmin'
+                ],
                 options: { spawn: false }
             },
             gruntfile: { files: ['Gruntfile.js'] },
             livereload: {
                 options: { livereload: '<%= connect.options.livereload %>' },
                 files: [
-                    '<%= appconfig.dev %>/{,*/}*.html',
-                    '.tmp/styles/{,*/}*.css',
-                    '<%= appconfig.dev %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
+                    '<%= config.dev %>/{,*/}*.html',
+                    '<%= config.dev %>/{,*/}*.css',
+                    '<%= config.dev %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
                 ]
             }
         },
@@ -321,35 +380,57 @@ module.exports = function (grunt) {
                 port: 9000,
                 hostname: 'localhost',
                 livereload: 35729,
-                base: '<%= appconfig.dev %>'
+                base: '<%= config.dev %>'
             },
             livereload: {
                 options: {
                     open: true,
                     base: [
                         '.tmp',
-                        '<%= appconfig.dist %>'
+                        '<%= config.dist %>'
                     ]
                 }
             },
-            dist: { options: { base: '<%= appconfig.dist %>' } }
+            dist: { options: { base: '<%= config.dist %>' } }
         },
         concurrent: {
             cj: [
                 'less',
                 'copy',
                 'concat',
+                'uglify',
+            ],
+            dev: [
+                'less-compile',
+                'autoprefixer',
+                'csscomb',
+                'cssmin',
+                'concat',
                 'uglify'
             ],
-            ha: [
+            dist: [
                 'jekyll:theme',
-                'copy-templates',
-                'sed'
+                'uglify',
+                'csscomb'
             ]
+        },
+        pagespeed: {
+            options: {
+                nokey: true
+            },
+            dist: {
+                options: {
+                    url: 'http://rms.kreativkombinat.de',
+                    paths: ['/itemview', '/signin'],
+                    locale: 'de_DE',
+                    strategy: 'desktop',
+                    threshold: 80
+                }
+            }
         }
     });
     grunt.registerTask('dist-init', '', function () {
-        grunt.file.mkdir('<%= appconfig.dist %>/assets/');
+        grunt.file.mkdir('<%= config.dist %>/assets/');
     });
     grunt.registerTask('serve', function (target) {
         if (target === 'dist') {
@@ -359,7 +440,7 @@ module.exports = function (grunt) {
             ]);
         }
         grunt.task.run([
-            'autoprefixer',
+            'concurrent:dev',
             'connect:livereload',
             'watch'
         ]);
@@ -368,19 +449,17 @@ module.exports = function (grunt) {
         'jekyll',
         'validation'
     ]);
-    grunt.registerTask('unit-test', ['qunit']);
-    var testSubtasks = [
-            'dist-css',
-            'jshint',
-            'validate-html'
-        ];
-    grunt.registerTask('test', testSubtasks);
-    grunt.registerTask('dist-js', [
+    grunt.registerTask('test', [
+        'css',
+        'jshint',
+        'validate-html'
+    ]);
+    grunt.registerTask('js', [
         'concat',
         'uglify'
     ]);
     grunt.registerTask('less-compile', ['less:compileTheme']);
-    grunt.registerTask('dist-css', [
+    grunt.registerTask('css', [
         'less-compile',
         'autoprefixer',
         'csscomb',
@@ -390,28 +469,39 @@ module.exports = function (grunt) {
         'newer:copy',
         'newer:imagemin'
     ]);
-    grunt.registerTask('dist-cb', ['filerev']);
-    grunt.registerTask('dist-html', [
-        'jekyll:theme',
-        'htmlmin',
-        'sed'
+    grunt.registerTask('cb', [
+        'clean:revved',
+        'filerev:assets',
+        'usemin'
+    ]);
+    grunt.registerTask('templates', ['jekyll:theme']);
+    grunt.registerTask('html', [
+        'templates',
+        'replace',
+        'htmlmin'
     ]);
     grunt.registerTask('dist-cc', [
         'test',
-        'concurrent:cj',
-        'concurrent:ha'
+        'concurrent:cj'
     ]);
     grunt.registerTask('dev', [
-        'dist-css',
-        'dist-js',
-        'dist-html'
+        'html',
+        'css'
     ]);
     grunt.registerTask('dist', [
-        'clean',
-        'dist-css',
-        'dist-js',
-        'dist-html',
-        'dist-assets'
+        'clean:server',
+        'css',
+        'js',
+        'html',
+        'cb'
+    ]);
+    grunt.registerTask('build', [
+        'clean:server',
+        'css',
+        'js',
+        'html',
+        'filerev:assets',
+        'usemin'
     ]);
     grunt.registerTask('compile-theme', ['dist']);
     grunt.registerTask('default', ['dev']);

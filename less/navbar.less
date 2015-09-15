@@ -16,7 +16,7 @@
 .app-navbar {
 	border-top: 0px solid @app-gray;
 	border-bottom: 0;
-	background: #000;
+	background: transparent;
 }
 
 @media(min-width:767px) {
@@ -26,9 +26,16 @@
 		-webkit-transition: background .5s ease-in-out,padding .5s ease-in-out;
 		-moz-transition: background .5s ease-in-out,padding .5s ease-in-out;
 		transition: background .5s ease-in-out,padding .5s ease-in-out;
+		a {
+    		color: #fff !important;
+		}
 	}
 	.app-navbar-collapse {
 		padding: 20px 0 10px 0;
+		background: #000;
+		a {
+			color: #777 !important;
+		}
 	}
 }
 
