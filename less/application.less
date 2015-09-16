@@ -44,9 +44,18 @@ a:focus  {
 .agentur-section {
     height: 100%;
     padding-top: 150px;
+    padding-bottom: 150px;
+    background: url(../assets/img/sun.jpg) no-repeat center center !important;
+    background-size: cover !important;
+    color: #fff;
 }
 
 .leistungen-section {
+    height: 100%;
+    padding-top: 150px;
+}
+
+.team-section {
     height: 100%;
     padding-top: 150px;
 }
@@ -104,8 +113,12 @@ a:focus  {
 }
 
 .app-row {
-    .row();
+    width: 100%;
     margin-bottom: @line-height-computed;
+}
+
+.app-content-full {
+    .container();
 }
 
 .app-content-left {
@@ -115,7 +128,32 @@ a:focus  {
 }
 
 .app-content-left-fourth {
-    .make-md-column(3);
+    .make-md-column(6);  
+    @media (min-width: @screen-sm-min) {
+        padding-left: 0;
+    }
+}
+
+.app-content-right-fourth {
+    .make-md-column(6);
+    @media (min-width: @screen-sm-min) {
+        padding-right: 0;
+    }
+}
+
+.app-card-body {
+    background: #efefef;
+    min-height: 600px;
+    img {
+        border: 1px solid #efefef;
+    }
+}
+
+.app-card-header {
+    padding: @line-height-computed / 2;
+    h2 {
+        font-size: 1.4rem !important;
+    }
 }
 
 .app-content-right {
@@ -145,7 +183,9 @@ a:focus  {
     }
 }
 
-.app-team-social{
+.app-team-social {
+    position: absolute;
+    bottom: 0;
     display: inline-block;
     background-color: #fff;
     width: 100%;
@@ -154,7 +194,7 @@ a:focus  {
     ul {
         list-style-type: none;
         padding: 0;
-        float: right;
+        //float: right;
         margin: 0;
 
 
