@@ -8522,10 +8522,12 @@ ul.formTabs:after,
 .app-brand:after,
 .app-footer-content:before,
 .app-footer-content:after,
-.app-section:before,
-.app-section:after,
 .app-intro-info:before,
 .app-intro-info:after,
+.app-intro-brand:before,
+.app-intro-brand:after,
+.app-section:before,
+.app-section:after,
 .app-clientsbar-title:before,
 .app-clientsbar-title:after,
 .app-row:before,
@@ -8556,8 +8558,9 @@ ul.formTabs:after,
 .app-brandbar-content:after,
 .app-brand:after,
 .app-footer-content:after,
-.app-section:after,
 .app-intro-info:after,
+.app-intro-brand:after,
+.app-section:after,
 .app-clientsbar-title:after,
 .app-row:after
 {
@@ -13881,11 +13884,25 @@ fieldset[disabled] .searchButton.focus
 {
     float: left;
 
-    padding: 0;
+    padding: 0 .71428571rem;
 }
-.app-brandname-logo
+.app-navbar-brand-image .logo
 {
+    display: block;
+
+    width: 400px;
+    max-width: 100%;
+    height: auto;
+    height: 30px;
+}
+.logo
+{
+    display: block;
+
     width: 100%;
+    max-width: 100%;
+    max-width: 900px;
+    height: auto;
 }
 .app-navbar
 {
@@ -13913,7 +13930,7 @@ fieldset[disabled] .searchButton.focus
     {
         padding: 20px 0 10px 0;
 
-        background: #000;
+        background: #666;
     }
     .app-navbar-collapse a
     {
@@ -14277,6 +14294,156 @@ app-page-abstract
     font-size: 17px;
     line-height: 36px;
 }
+.intro-section
+{
+    height: 100%;
+
+    background: transparent;
+}
+.app-intro-info
+{
+    position: absolute;
+    top: 30%;
+    right: 0;
+    left: 0;
+
+    margin-right: auto;
+    margin-left: auto;
+    padding: 1.42857143rem 0;
+    padding-right: 15px;
+    padding-left: 15px;
+
+    text-align: center;
+
+    color: #fff;
+    border-top: 10px solid #fff;
+    border-bottom: 10px solid #fff;
+}
+@media (min-width: 768px)
+{
+    .app-intro-info
+    {
+        width: 750px;
+    }
+}
+@media (min-width: 992px)
+{
+    .app-intro-info
+    {
+        width: 970px;
+    }
+}
+@media (min-width: 1200px)
+{
+    .app-intro-info
+    {
+        width: 1170px;
+    }
+}
+.app-intro-info > .navbar-header,
+.app-intro-info > .navbar-collapse
+{
+    margin-right: -15px;
+    margin-left: -15px;
+}
+@media (min-width: 768px)
+{
+    .app-intro-info > .navbar-header,
+    .app-intro-info > .navbar-collapse
+    {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+.app-intro-info h1
+{
+    font-family: 'Oswald', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 2.1rem;
+
+    margin-top: 0;
+
+    text-transform: uppercase;
+}
+.app-intro-info p
+{
+    font-size: .6rem;
+
+    margin-bottom: 0;
+
+    text-transform: uppercase;
+}
+@media (min-width: 768px)
+{
+    .app-intro-info
+    {
+        top: 50%;
+    }
+}
+.app-intro-brand
+{
+    position: absolute;
+    top: 30%;
+    right: 0;
+    left: 0;
+
+    margin-right: auto;
+    margin-left: auto;
+    padding: 1.42857143rem;
+    padding-right: 15px;
+    padding-left: 15px;
+
+    text-align: center;
+}
+@media (min-width: 768px)
+{
+    .app-intro-brand
+    {
+        width: 750px;
+    }
+}
+@media (min-width: 992px)
+{
+    .app-intro-brand
+    {
+        width: 970px;
+    }
+}
+@media (min-width: 1200px)
+{
+    .app-intro-brand
+    {
+        width: 1170px;
+    }
+}
+.app-intro-brand > .navbar-header,
+.app-intro-brand > .navbar-collapse
+{
+    margin-right: -15px;
+    margin-left: -15px;
+}
+@media (min-width: 768px)
+{
+    .app-intro-brand > .navbar-header,
+    .app-intro-brand > .navbar-collapse
+    {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+.app-intro-brand .logo
+{
+    display: block;
+
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+
+    opacity: .2;
+}
+.app-intro-brand .logo path
+{
+    fill: #fff;
+}
 #background
 {
     width: 100%;
@@ -14284,7 +14451,7 @@ app-page-abstract
     height: 100%;
     min-height: 100%;
 
-    background: url(../assets/img/01.jpg) no-repeat center center;
+    background: url(../assets/img/cover.jpg) no-repeat center center;
     -webkit-background-size: cover;
             background-size: cover;
 }
@@ -14294,7 +14461,8 @@ app-page-abstract
 }
 body
 {
-    background: #efefef;
+    color: #666;
+    background: #fff;
 }
 a,
 a:hover,
@@ -14318,7 +14486,7 @@ a:focus
     padding-right: 15px;
     padding-left: 15px;
 
-    background: #efefef;
+    background: transparent;
 }
 @media (min-width: 768px)
 {
@@ -14368,77 +14536,6 @@ a:focus
 .app-section .app-heading i
 {
     color: #5a5f64;
-}
-.intro-section
-{
-    height: 100%;
-
-    background: transparent;
-}
-.app-intro-info
-{
-    position: absolute;
-    top: 20%;
-    right: 0;
-    left: 0;
-
-    margin-right: auto;
-    margin-left: auto;
-    padding-right: 15px;
-    padding-left: 15px;
-
-    text-align: center;
-
-    color: #fff;
-    border-top: 10px solid #fff;
-    border-bottom: 10px solid #fff;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info
-    {
-        width: 750px;
-    }
-}
-@media (min-width: 992px)
-{
-    .app-intro-info
-    {
-        width: 970px;
-    }
-}
-@media (min-width: 1200px)
-{
-    .app-intro-info
-    {
-        width: 1170px;
-    }
-}
-.app-intro-info > .navbar-header,
-.app-intro-info > .navbar-collapse
-{
-    margin-right: -15px;
-    margin-left: -15px;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info > .navbar-header,
-    .app-intro-info > .navbar-collapse
-    {
-        margin-right: 0;
-        margin-left: 0;
-    }
-}
-.app-intro-info h1
-{
-    text-transform: uppercase;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info
-    {
-        top: 40%;
-    }
 }
 .agentur-section
 {
