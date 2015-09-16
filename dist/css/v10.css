@@ -8522,8 +8522,6 @@ ul.formTabs:after,
 .app-brand:after,
 .app-footer-content:before,
 .app-footer-content:after,
-.app-intro-info:before,
-.app-intro-info:after,
 .app-intro-brand:before,
 .app-intro-brand:after,
 .app-section:before,
@@ -8558,7 +8556,6 @@ ul.formTabs:after,
 .app-brandbar-content:after,
 .app-brand:after,
 .app-footer-content:after,
-.app-intro-info:after,
 .app-intro-brand:after,
 .app-section:after,
 .app-clientsbar-title:after,
@@ -13943,8 +13940,11 @@ fieldset[disabled] .searchButton.focus
 }
 .navbar-nav > li > a
 {
+    font-family: 'Oswald', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
     padding: .35714286rem .71428571rem .71428571rem .71428571rem;
 
+    letter-spacing: 1px;
     text-transform: uppercase;
 }
 .navbar-nav > li > a:focus
@@ -14300,85 +14300,6 @@ app-page-abstract
 
     background: transparent;
 }
-.app-intro-info
-{
-    position: absolute;
-    top: 30%;
-    right: 0;
-    left: 0;
-
-    margin-right: auto;
-    margin-left: auto;
-    padding: 1.42857143rem 0;
-    padding-right: 15px;
-    padding-left: 15px;
-
-    text-align: center;
-
-    color: #fff;
-    border-top: 10px solid #fff;
-    border-bottom: 10px solid #fff;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info
-    {
-        width: 750px;
-    }
-}
-@media (min-width: 992px)
-{
-    .app-intro-info
-    {
-        width: 970px;
-    }
-}
-@media (min-width: 1200px)
-{
-    .app-intro-info
-    {
-        width: 1170px;
-    }
-}
-.app-intro-info > .navbar-header,
-.app-intro-info > .navbar-collapse
-{
-    margin-right: -15px;
-    margin-left: -15px;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info > .navbar-header,
-    .app-intro-info > .navbar-collapse
-    {
-        margin-right: 0;
-        margin-left: 0;
-    }
-}
-.app-intro-info h1
-{
-    font-family: 'Oswald', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-size: 2.1rem;
-
-    margin-top: 0;
-
-    text-transform: uppercase;
-}
-.app-intro-info p
-{
-    font-size: .6rem;
-
-    margin-bottom: 0;
-
-    text-transform: uppercase;
-}
-@media (min-width: 768px)
-{
-    .app-intro-info
-    {
-        top: 50%;
-    }
-}
 .app-intro-brand
 {
     position: absolute;
@@ -14445,11 +14366,12 @@ app-page-abstract
 {
     display: block;
 
-    width: 500px;
+    width: 300px;
     max-width: 100%;
     height: auto;
-    height: 500px;
+    height: 300px;
     margin-right: auto;
+    margin-bottom: 1.42857143rem;
     margin-left: auto;
     padding: 5%;
 
@@ -14457,6 +14379,40 @@ app-page-abstract
     border: 10px solid #999;
     border-radius: 50%;
     background: #000;
+}
+.app-intro-info
+{
+    padding: 1.42857143rem 0;
+
+    text-align: center;
+
+    color: #fff;
+    border-top: 10px solid #fff;
+    border-bottom: 10px solid #fff;
+}
+.app-intro-info h1
+{
+    font-family: 'Oswald', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 2.1rem;
+
+    margin-top: 0;
+
+    text-transform: uppercase;
+}
+.app-intro-info p
+{
+    font-size: .6rem;
+
+    margin-bottom: 0;
+
+    text-transform: uppercase;
+}
+@media (min-width: 768px)
+{
+    .app-intro-info
+    {
+        top: 50%;
+    }
 }
 #background
 {
