@@ -14363,10 +14363,20 @@ fieldset[disabled] .searchButton.focus
 {
     display: block;
 
-    width: 400px;
+    width: 100%;
     max-width: 100%;
+    max-width: 260px;
     height: auto;
     height: 30px;
+    padding-top: .71428571rem;
+}
+@media (min-width: 768px)
+{
+    .app-navbar-brand-image .logo
+    {
+        max-width: 400px;
+        padding-top: 0;
+    }
 }
 .logo
 {
@@ -14379,11 +14389,13 @@ fieldset[disabled] .searchButton.focus
 }
 .app-navbar
 {
+    padding-bottom: 1.42857143rem;
+
     border-top: 0 solid #5a5f64;
     border-bottom: 0;
-    background: transparent;
+    background: #fff;
 }
-@media (min-width: 767px)
+@media (min-width: 768px)
 {
     .app-navbar
     {
@@ -14394,6 +14406,8 @@ fieldset[disabled] .searchButton.focus
         -webkit-transition: background .5s ease-in-out, padding .5s ease-in-out;
              -o-transition: background .5s ease-in-out, padding .5s ease-in-out;
                 transition: background .5s ease-in-out, padding .5s ease-in-out;
+
+        background: transparent;
     }
     .app-navbar a
     {
@@ -14410,9 +14424,12 @@ fieldset[disabled] .searchButton.focus
         color: #777 !important;
     }
 }
-.navbar-nav
+@media (min-width: 768px)
 {
-    float: right !important;
+    .navbar-nav
+    {
+        float: right;
+    }
 }
 .navbar-nav > li > a
 {
@@ -14598,15 +14615,26 @@ app-page-abstract
 }
 .app-icon
 {
-    font-size: 10rem;
+    font-size: 4rem;
 
-    width: 500px;
-    height: 500px;
-    padding: 1.42857143rem;
+    width: 100%;
+    height: 100%;
 
     text-align: center;
 
     color: #000;
+    background: #efefef;
+}
+@media (min-width: 768px)
+{
+    .app-icon
+    {
+        font-size: 10rem;
+    }
+}
+.fa-stack
+{
+    color: #009bce;
 }
 .app-layout-simple
 {
@@ -14786,16 +14814,14 @@ app-page-abstract
 {
     height: 100%;
 
-    background: transparent;
+    background: url(../assets/img/cover.jpg) no-repeat top center;
+    -webkit-background-size: cover;
+            background-size: cover;
 }
 .app-intro-brand
 {
-    position: absolute;
-    top: 20%;
-    right: 0;
-    left: 0;
-
     width: 100%;
+    margin-top: 100px;
     margin-right: auto;
     margin-left: auto;
     padding: 1.42857143rem;
@@ -14838,6 +14864,20 @@ app-page-abstract
     {
         margin-right: 0;
         margin-left: 0;
+    }
+}
+@media (min-width: 992px)
+{
+    .app-intro-brand
+    {
+        position: absolute;
+        top: 20%;
+        right: 0;
+        left: 0;
+
+        margin-top: 0;
+        margin-right: auto;
+        margin-left: auto;
     }
 }
 .app-intro-brand .logo
@@ -14908,14 +14948,8 @@ app-page-abstract
     min-width: 100%;
     height: 100%;
     min-height: 100%;
-
-    background: url(../assets/img/cover.jpg) no-repeat center center;
-    -webkit-background-size: cover;
-            background-size: cover;
-}
-.container h1
-{
-    color: white;
+    margin: 0;
+    padding: 0;
 }
 body
 {
@@ -15005,6 +15039,14 @@ a:focus
     background: url(../assets/img/door.jpg) no-repeat center center !important;
     -webkit-background-size: cover !important;
             background-size: cover !important;
+}
+@media (min-width: 992px)
+{
+    .agentur-section
+    {
+        height: 100vh;
+        margin-top: -10px;
+    }
 }
 .leistungen-section
 {

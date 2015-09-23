@@ -1,22 +1,26 @@
 .intro-section {
     height: 100%;
-    //padding-top: 125px;
-    background: transparent;
+    background: url(../assets/img/cover.jpg) no-repeat top center;
+    background-size: cover;
 }
 
 
 
 .app-intro-brand {
     .container();
-    position: absolute;
-    margin-left: auto;
-    margin-right: auto;
-    left: 0;
-    right: 0;
-    top: 20%;
     text-align: center;
     padding: @line-height-computed;
     width: 100%;
+    margin-top: 100px;
+    @media (min-width: @screen-md-min) {
+        margin-top: 0;
+        position: absolute;
+        margin-left: auto;
+        margin-right: auto;
+        left: 0;
+        right: 0;
+        top: 20%;
+        }
     .logo {
         .img-responsive();
         width: 100%;
@@ -38,13 +42,6 @@
 }
 
 .app-intro-info {
-    //.container();
-    //position: absolute;
-    //margin-left: auto;
-    //margin-right: auto;
-    //left: 0;
-    //right: 0;
-    //top: 20%;
     text-align: center;
     color: #fff;
     border-top: 10px solid #fff;
@@ -76,13 +73,10 @@
     min-height: 100%;
     width: 100%;
     height: 100%;
+    padding: 0;
+    margin: 0;
     //z-index: -100;
     //-webkit-transform: translateX(-50%) translateY(-50%);
     //transform: translateX(-50%) translateY(-50%);
-    background: url(../assets/img/cover.jpg) no-repeat center center;
-    background-size: cover;
-}
-.container h1 {
-    color: white;
 }
 

@@ -10,7 +10,13 @@
 	.logo {
 		.img-responsive();
 		height: 30px;
-		width: 400px;
+		width: 100%;
+		max-width: 260px;
+		padding-top: @line-height-computed / 2;
+		@media (min-width: @screen-sm-min) {
+			max-width: 400px;
+			padding-top: 0;
+		}
 	}
 }
 
@@ -20,23 +26,21 @@
 	width: 100%;
 }
 
-.app-brandname-logo {
-	
-}
-
 .app-navbar {
 	border-top: 0px solid @app-gray;
 	border-bottom: 0;
-	background: transparent;
+	background: #fff;
+	padding-bottom: @line-height-computed;
 }
 
-@media(min-width:767px) {
+@media (min-width: @screen-sm-min) {
 	.app-navbar {
 		float: right;
 		padding: 40px 0;
 		-webkit-transition: background .5s ease-in-out,padding .5s ease-in-out;
 		-moz-transition: background .5s ease-in-out,padding .5s ease-in-out;
 		transition: background .5s ease-in-out,padding .5s ease-in-out;
+		background: transparent;
 		a {
     		color: #fff !important;
 		}
@@ -51,7 +55,9 @@
 }
 
 .navbar-nav {
-	float: right !important;
+	@media (min-width: @screen-sm-min) {
+		float: right;
+	}
 }
 
 .navbar-nav > li > a {
